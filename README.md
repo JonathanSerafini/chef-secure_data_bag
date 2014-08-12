@@ -1,6 +1,6 @@
 # SecureDataBag
 
-TODO: Write a gem description
+Provides a mechanism to partially encrypt data bag items on a per-key basis which gives us the opportunity to still search for every other field.
 
 ## Installation
 
@@ -18,12 +18,15 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+For the most part, this behaves exactly like a standard DataBagItem would. Encryption and Decryption of attributes ought to be completely transparent.
 
-## Contributing
+SecureDataBagItem is also built on Mash rather than Hash so you'll find it more compatible with symbol keys. 
 
-1. Fork it ( https://github.com/[my-github-username]/secure_data_bag/fork )
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+```
+data = { id:"databag", "value":"my string" }
+item = SecureDataBagItem.from_hash(data)
+item.raw_data
+item.encoded_fields ["value"]
+item.to_hash
+```
+
