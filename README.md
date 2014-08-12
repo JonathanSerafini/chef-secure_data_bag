@@ -30,3 +30,11 @@ item.encoded_fields ["value"]
 item.to_hash
 ```
 
+By default, this will use the system wide secret file. But this can be changed.
+
+```
+item.secret "/path/to/file.pem"
+item.secret "uri://path/to/file.pem"
+item.cipher "aes-256-cbc"
+```
+
