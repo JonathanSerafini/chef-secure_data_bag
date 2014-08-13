@@ -1,6 +1,6 @@
 
 require 'yaml'
-require 'ffi_yajl'
+require 'yajl'
 require 'openssl'
 require 'base64'
 require 'digest/sha2'
@@ -70,7 +70,7 @@ module SecureDataBag
       end
 
       def serialize_value(value)
-        FFI_Yajl::Encoder.encode(:json_wrapper => value)
+        Yajl::Encoder.encode(:json_wrapper => value)
       end
 
       def openssl_encryptor

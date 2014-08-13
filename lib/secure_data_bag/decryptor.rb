@@ -1,6 +1,6 @@
 
 require 'yaml'
-require 'ffi_yajl'
+require 'yajl'
 require 'openssl'
 require 'base64'
 require 'digest/sha2'
@@ -62,7 +62,7 @@ module SecureDataBag
           value << openssl_decryptor.final
 
           if value.include? "json_wrapper"
-            value = FFI_Yajl::Parser.parse(value)["json_wrapper"]
+            value = Yajl::Parser.parse(value)["json_wrapper"]
           end
           @openssl_decryptor = nil
         end
