@@ -6,16 +6,22 @@ require 'chef/encrypted_data_bag_item/unsupported_encrypted_data_bag_item_format
 class Encryptor
   attr_reader :encryption
   attr_reader :unencrypted_hash
+  attr_reader :encoded_fields
   attr_reader :key
 
   def initialize(unencrypted_hash, encryption, key)
     @encryption = encryption
     @unencrypted_hash = unencrypted_hash
+    @encoded_fields = []
     @key = key
   end
 
   def for_encrypted_item
-    encrypted_hash.merge({encryption:encryption})
+    data = encrypted_hash
+    encryption_hash = encryption.dup
+    encryption_hash[:iv] = Base64.encode64(encryption_hash[:iv] || "")
+    encryption_hash[:encoded_fields] = encoded_fields.uniq
+    data.merge({encryption:encryption_hash})
   end
 
   def encrypted_hash
@@ -28,6 +34,7 @@ class Encryptor
     hash.each do |k,v|
       if encryption[:encoded_fields].include?(k)
         v = encrypt_value(v)
+        encoded_fields << k
       elsif v.is_a? Hash
         v = encrypt_hash(v)
       end
@@ -43,7 +50,7 @@ class Encryptor
       value = openssl_encryptor.update(value)
       value << openssl_encryptor.final
       @openssl_encryptor = nil
-      Base64.encode64(value)
+      value = Base64.encode64(value)
     end
 
     value

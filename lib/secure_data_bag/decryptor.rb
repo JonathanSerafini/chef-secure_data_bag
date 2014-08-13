@@ -12,12 +12,11 @@ class Decryptor
     @encryption = encryption
     @encrypted_hash = encrypted_hash
     @key = key
+    assert_valid_cipher!
   end
 
   def for_decrypted_item
-    FFI_Yajl::Parser.parse(decrypted_hash)["json_wrapper"]
-  rescue FFI_Yajl::ParseError
-    raise DecryptionFailure, decryption_error
+    decrypted_hash
   end
 
   def decryption_error(e=nil)
@@ -28,12 +27,15 @@ class Decryptor
   end
 
   def iv
-    Base64.decode64(encryption[:iv])
+    @iv ||= begin
+      iv_string = encryption[:iv]
+      Base64.decode64(iv_string)
+    end
   end
 
   def decrypted_hash
     @decrypted_hash ||= begin
-      decrypt_hash(decrypted_hash.dup)
+      decrypt_hash(encrypted_hash.dup)
     end
   end
 
@@ -52,20 +54,20 @@ class Decryptor
   def decrypt_value(value)
     if value.is_a? String and not value.empty?
       value = Base64.decode64(value)
-      value = openssl_decryptor(value)
+      value = openssl_decryptor.update(value)
       value << openssl_decryptor.final
-      value = FFI_Yajl::Parser.parse(value)["json_wrapper"]
+
+      if value.include? "json_wrapper"
+        value = FFI_Yajl::Parser.parse(value)["json_wrapper"]
+      end
       @openssl_decryptor = nil
     end
     value
-  rescue OpenSSL::Cipher::CipherError => e
-    raise DecryptionFailure, decryption_error(e)
   end
 
   def openssl_decryptor
     @openssl_decryptor ||= begin
-      assert_valid_ciper!
-      d = OpenSSL::Cipher::Cipher.new(ALGORITHM)
+      d = OpenSSL::Cipher::Cipher.new(encryption[:cipher])
       d.decrypt
       d.key = Digest::SHA256.digest(key)
       d.iv = iv
@@ -76,7 +78,7 @@ class Decryptor
   def assert_valid_cipher!
     requested_cipher = encryption[:cipher]
     unless requested_cipher == encryption[:cipher]
-      raise UnsupportedCipher, "Cipher '#{requested_cipher}' is not supported by this version of Chef. Available ciphers: ['#{ALGORITHM}']"
+      raise UnsupportedCipher, "Cipher '#{requested_cipher}' is not supported by this version of Chef. Available ciphers: ['#{encryption[:cipher]}']"
     end
   end
 end
