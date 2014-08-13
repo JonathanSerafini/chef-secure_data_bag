@@ -32,15 +32,19 @@ class Encryptor
   def encrypted_value(value)
     value = if value.is_a? Array or
                value.is_a? Hash
-            then serialize_value(value)
+              serialize_value(value)
             elsif value.is_a? Fixnum
-            then value.to_s
-            else value
+              value.to_s
+            else 
+              value
             end
-    value = openssl_encryptor.update(value)
-    value << openssl_encryptor.final
-    @openssl_encryptor = nil
-    Base64.encode64(value)
+
+    unless value.nil?
+      value = openssl_encryptor.update(value)
+      value << openssl_encryptor.final
+      @openssl_encryptor = nil
+      Base64.encode64(value)
+    end
   end
 
   def encrypted_hash

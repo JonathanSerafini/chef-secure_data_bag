@@ -39,7 +39,7 @@ class Decryptor
     @decrypted_hash ||= begin
       data = encrypted_hash.dup
       @encryption["encoded_fields"].each do |field|
-        data[field] = decrypted_value(data[field])
+        data[field] = decrypted_value(data[field]) unless data[field].nil?
       end
 
       data
