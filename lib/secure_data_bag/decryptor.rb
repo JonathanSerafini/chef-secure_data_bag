@@ -16,6 +16,7 @@ class Decryptor
   end
 
   def for_decrypted_item
+    pp "decrypted_hash"
     decrypted_hash
   end
 

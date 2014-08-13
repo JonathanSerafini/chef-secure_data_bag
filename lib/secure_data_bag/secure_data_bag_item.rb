@@ -6,16 +6,17 @@ class Chef::SecureDataBagItem < Chef::DataBagItem
   def initialize
     super
 
-    @decoded = false
     @secret = nil
     @key = nil
     @cipher = nil
     @iv = nil
     @algorithm = nil
-    @encoded_fields = nil
+    @encoded_fields = []
   end
 
-  attr_accessor :decoded
+  #
+  # Define attributes for encryption related tasks
+  #
 
   def secret(arg=nil)
     if @secret.nil? and arg.nil?
@@ -70,9 +71,18 @@ class Chef::SecureDataBagItem < Chef::DataBagItem
     set_or_return(:iv, arg, kind_of: String)
   end
 
+  #
+  # These are either the fields which are currently encoded or those that
+  # we wish to encode
+  #
+
   def encoded_fields(arg=nil)
-    set_or_return(:encoded_fields, arg, kind_of: Array, default: [])
+    set_or_return(:encoded_fields, arg, kind_of: Array)
   end
+
+  #
+  # The encryption definition
+  #
 
   def encryption
     {
@@ -82,16 +92,16 @@ class Chef::SecureDataBagItem < Chef::DataBagItem
     }
   end
 
-  def raw_data
-    unless @decoded
-      @raw_data = decode_data
-    end
-    @raw_data
-  end
-
   def raw_data=(enc_data)
     super enc_data
+    decode_data
+  end
 
+  #
+  # Encoder / Decoder
+  #
+
+  def decode_data
     if @raw_data.key? :encryption
       encryption = @raw_data.delete(:encryption) || {}
 
@@ -99,21 +109,18 @@ class Chef::SecureDataBagItem < Chef::DataBagItem
       iv      encryption[:iv]
       encoded_fields  encryption[:encoded_fields]
 
-      @decoded = false
-    else @decoded = true
+      @raw_data = decode_data
     end
-  end
-
-  def decode_data
-    Mash.new(
-      Decryptor.new(@raw_data, encryption, key)
-        .for_decrypted_item
-    )
+    @raw_data
   end
 
   def encode_data
     Encryptor.new(raw_data, encryption, key).for_encrypted_item
   end
+
+  #
+  # Transitions
+  #
 
   def self.from_hash(h)
     m = Mash.new(h)
