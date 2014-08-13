@@ -30,9 +30,11 @@ class Encryptor
   end
 
   def encrypted_value(value)
-    value = case value.is_a?
-            when Array, Hash then serialize_value(value)
-            when Fixnum then value.to_s
+    value = if value.is_a? Array or
+               value.is_a? Hash
+            then serialize_value(value)
+            elsif value.is_a? Fixnum
+            then value.to_s
             else value
             end
     value = openssl_encryptor.update(value)
