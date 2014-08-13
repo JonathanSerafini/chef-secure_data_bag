@@ -27,33 +27,39 @@ class Decryptor
     msg
   end
 
-  def encrypted_bytes(data)
-    Base64.decode64(data)
-  end
-
   def iv
-    Base64.decode64(@encryption["iv"])
+    Base64.decode64(encryption[:iv])
   end
 
   def decrypted_hash
     @decrypted_hash ||= begin
-      data = encrypted_hash.dup
-      @encryption["encoded_fields"].each do |field|
-        data[field] = decrypted_value(data[field]) unless data[field].nil?
-      end
-
-      data
-    rescue OpenSSL::Cipher::CipherError => e
-      raise DecryptionFailure, decryption_error(e)
+      decrypt_hash(decrypted_hash.dup)
     end
   end
 
-  def decrypted_value(value)
-    value = encrypted_bytes(value)
-    value = openssl_decryptor(value)
-    value << openssl_decryptor.final
-    @openssl_decryptor = nil # Apparently it's single use
+  def decrypt_hash(hash)
+    hash.each do |k,v|
+      if encryption[:encoded_fields].include?(k)
+        v = decrypt_value(v)
+      elsif v.is_a? Hash
+        v = decrypt_hash(v)
+      end
+      hash[k] = v
+    end
+    hash
+  end
+
+  def decrypt_value(value)
+    if value.is_a? String and not value.empty?
+      value = Base64.decode64(value)
+      value = openssl_decryptor(value)
+      value << openssl_decryptor.final
+      value = FFI_Yajl::Parser.parse(value)["json_wrapper"]
+      @openssl_decryptor = nil
+    end
     value
+  rescue OpenSSL::Cipher::CipherError => e
+    raise DecryptionFailure, decryption_error(e)
   end
 
   def openssl_decryptor
@@ -68,10 +74,9 @@ class Decryptor
   end
 
   def assert_valid_cipher!
-    requested_cipher = @encryption["cipher"]
-    unless requested_cipher == ALGORITHM
-      raise UnsupportedCipher, 
-        "Cipher '#{requested_cipher}' is not supported by this version of Chef. Available ciphers: ['#{ALGORITHM}']"
+    requested_cipher = encryption[:cipher]
+    unless requested_cipher == encryption[:cipher]
+      raise UnsupportedCipher, "Cipher '#{requested_cipher}' is not supported by this version of Chef. Available ciphers: ['#{ALGORITHM}']"
     end
   end
 end

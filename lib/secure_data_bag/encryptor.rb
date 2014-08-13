@@ -18,6 +18,49 @@ class Encryptor
     encrypted_hash.merge({encryption:encryption})
   end
 
+  def encrypted_hash
+    @encrypted_data ||= begin
+      encrypt_hash(unencrypted_hash.dup) 
+    end
+  end
+
+  def encrypt_hash(hash)
+    hash.each do |k,v|
+      if encryption[:encoded_fields].include?(k)
+        v = encrypt_value(v)
+      elsif v.is_a? Hash
+        v = encrypt_hash(v)
+      end
+      hash[k] = v
+    end
+    hash
+  end
+
+  def encrypt_value(value)
+    value = normalize_value(value)
+
+    if not value.nil? and not value.empty?
+      value = openssl_encryptor.update(value)
+      value << openssl_encryptor.final
+      @openssl_encryptor = nil
+      Base64.encode64(value)
+    end
+
+    value
+  end
+
+  def normalize_value(value)
+    if [Hash,Array].any? {|c| value.is_a? c}
+      serialize_value(value)
+    else 
+      value.to_s
+    end
+  end
+
+  def serialize_value(value)
+    FFI_Yajl::Encoder.encode(:json_wrapper => value)
+  end
+
   def openssl_encryptor
     @openssl_encryptor ||= begin
       encryptor = OpenSSL::Cipher::Cipher.new(encryption[:cipher])
@@ -27,38 +70,6 @@ class Encryptor
       encryptor.key = Digest::SHA256.digest(key)
       encryptor
     end
-  end
-
-  def encrypted_value(value)
-    value = if value.is_a? Array or
-               value.is_a? Hash
-              serialize_value(value)
-            elsif value.is_a? Fixnum
-              value.to_s
-            else 
-              value
-            end
-
-    unless value.nil?
-      value = openssl_encryptor.update(value)
-      value << openssl_encryptor.final
-      @openssl_encryptor = nil
-      Base64.encode64(value)
-    end
-  end
-
-  def encrypted_hash
-    @encrypted_data ||= begin
-      data = unencrypted_hash.dup
-      encryption[:encoded_fields].each do |field|
-        data[field] = encrypted_value(data[field])
-      end
-      data
-    end
-  end
-
-  def serialize_value(value)
-    FFI_Yajl::Encoder.encode(:json_wrapper => value)
   end
 end
 
