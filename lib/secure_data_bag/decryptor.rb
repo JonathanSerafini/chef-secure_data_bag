@@ -1,10 +1,5 @@
 
-require 'yaml'
-require 'ffi_yajl'
-require 'openssl'
-require 'base64'
-require 'digest/sha2'
-
+require 'chef/encrypted_data_bag_item/decryptor'
 require 'chef/encrypted_data_bag_item/decryption_failure'
 require 'chef/encrypted_data_bag_item/unsupported_cipher'
 
