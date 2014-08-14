@@ -21,7 +21,7 @@ class Chef
 
       def secure_data_bag_item!(item, fields=[])
         secure = SecureDataBag::SecureDataBagItem.from_item item
-        secure.encode_fields secure.encode_fields + fields
+        secure.encoded_fields secure.encoded_fields + fields
         secure
       end
     end
