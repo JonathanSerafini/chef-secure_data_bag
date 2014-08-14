@@ -137,7 +137,7 @@ module SecureDataBag
 
     def self.from_item(h)
       item = self.from_hash(h.to_hash)
-      item.data_bag = h.data_bag
+      item.data_bag h.data_bag
       item
     end
 
