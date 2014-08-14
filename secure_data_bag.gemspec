@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description   = 'Provides a mechanism to partially encrypt data bag items and therefore ensure that they are searchable'
   spec.homepage      = ""
   spec.license       = "MIT"
-  spec.homepage      = 'https://github.com/lightspeedretail'
+  spec.homepage      = 'https://github.com/lightspeedretail/gem-secure_data_bag'
   spec.files         = `git ls-files -z`.split("\x0")
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})

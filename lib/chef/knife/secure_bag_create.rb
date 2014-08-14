@@ -1,41 +1,14 @@
 
+require 'chef/knife/secure_bag_base'
 require 'chef/knife/data_bag_create'
 
-module SecureDataBag
-  module Knife
-    class SecureBagCreate < DataBagCreate
-      deps do
-        require 'chef/data_bag'
-        require 'chef/encrypted_data_bag_item'
-        require 'secure_data_bag'
-      end
+class Chef
+  class Knife
+    class SecureBagCreate < Knife::DataBagCreate
+      include Knife::SecureBagBase
 
       banner "knife secure bag create BAG [ITEM] (options)"
       category "secure bag"
-
-      option :secret,
-        short:  "-s SECRET",
-        long:   "--secret",
-        description: "The secret key to use to encrypt data bag item values",
-        proc: Proc.new { |s| Chef::Config[:knife][:secret] = s }
-
-      option :secret_file,
-        long: "--secret-file SECRET_FILE",
-        description: "A file containing a secret key to use to encrypt data bag item values",
-        proc: Proc.new { |sf| Chef::Config[:knife][:secret_file] = sf }
-
-      option :encode_fields,
-        long: "--encode-fields FIELD1,FIELD2,FIELD3",
-        description: "List of attribute keys for which to encode values",
-        default: Array.new
-
-      def use_encryption
-        use_secure_databag ? false : super
-      end
-
-      def use_secure_databag
-        @raw_data["encryption"]
-      end
 
       def create_databag
         begin
