@@ -14,13 +14,12 @@ class Chef
         item = Chef::DataBagItem.load(bag, item_name)
         @raw_data = item.to_hash
 
-        if use_encryption
-          Chef::EncryptedDataBagItem.load(item, read_secret).to_hash
-        elsif use_secure_databag
-          SecureDataBag::SecureDataBagItem.from_item(output, read_secret)
-        else
-          item
+        if use_encryption and @raw_data["encrypted_data"]
+          item = Chef::EncryptedDataBagItem.load(item, read_secret)
         end
+        
+        item = SecureDataBag::SecureDataBagItem.from_item(item, read_secret)
+        item.to_hash
       end
 
       def edit_item(item)
@@ -28,9 +27,11 @@ class Chef
 
         if use_secure_databag
           output = SecureDataBag::SecureDataBagItem
-            .from_item(output, read_secret).
-            encode_Data
+            .from_hash(output, read_secret).
+            encode_data
         end
+
+        output
       end
     end
   end

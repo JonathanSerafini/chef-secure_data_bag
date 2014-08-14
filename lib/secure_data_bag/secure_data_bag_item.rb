@@ -13,7 +13,7 @@ module SecureDataBag
 
   class SecureDataBagItem < Chef::DataBagItem
     def initialize(key=nil)
-      super
+      super()
 
       @secret = Chef::Config[:encrypted_data_bag_secret]
       @key = key
@@ -40,7 +40,7 @@ module SecureDataBag
     end
 
     def load_key
-      @key = self.load_secret(secret)
+      @key = self.class.load_secret(secret)
     end
 
     def self.load_secret(path=nil)
@@ -48,21 +48,22 @@ module SecureDataBag
       unless path
        raise ArgumentError, "No secret specified and no secret found."
       end
-      case path
-      when /^\w+:\/\// # Remove key
-        begin
-          Kernel.open(path).read.strip
-        rescue Errno::ECONNREFUSED
-          raise ArgumentError, "Remove key not available from '#{path}'"
-        rescue OpenURI::HTTPError
-          raise ArgumentError, "Remove key not found at '#{path}'"
-        end
-      else
-        unless File.exist?(path)
-          raise Errno::ENOENT, "file not found '#{path}'"
-        end
-        IO.read(path).strip
-      end
+
+      key = case path
+            when /^\w+:\/\// # Remove key
+              begin
+                Kernel.open(path).read.strip
+              rescue Errno::ECONNREFUSED
+                raise ArgumentError, "Remove key not available from '#{path}'"
+              rescue OpenURI::HTTPError
+                raise ArgumentError, "Remove key not found at '#{path}'"
+              end
+            else
+              unless File.exist?(path)
+                raise Errno::ENOENT, "file not found '#{path}'"
+              end
+              IO.read(path).strip
+            end
 
       if key.size < 1
         raise ArgumentError, "invalid zero length path in '#{path}'"
@@ -85,7 +86,7 @@ module SecureDataBag
     #
 
     def encoded_fields(arg=nil)
-      arg = arg.uniq if arg
+      arg = Array(arg).uniq if arg
       set_or_return(:encoded_fields, arg, kind_of: Array)
     end
 
@@ -140,6 +141,7 @@ module SecureDataBag
     end
 
     def self.from_item(h, key=nil)
+      pp h.to_hash
       item = self.from_hash(h.to_hash, key)
       item.data_bag h.data_bag
       item
@@ -147,6 +149,13 @@ module SecureDataBag
 
     def to_hash
       result = encode_data
+      result["chef_type"] = "data_bag_item"
+      result["data_bag"] = self.data_bag
+      result
+    end
+
+    def to_raw_hash
+      result = raw_data.dup
       result["chef_type"] = "data_bag_item"
       result["data_bag"] = self.data_bag
       result

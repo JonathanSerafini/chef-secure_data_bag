@@ -74,6 +74,7 @@ module SecureDataBag
 
       def openssl_encryptor
         @openssl_encryptor ||= begin
+          encryption[:iv] = nil if encryption[:iv].empty?
           encryptor = OpenSSL::Cipher::Cipher.new(encryption[:cipher])
           encryptor.encrypt
           encryption[:iv] ||= encryptor.random_iv

@@ -24,8 +24,16 @@ class Chef
       end
 
       def run
-        item = load_item(@name_args[0], @name_args[1])
-        display = format_for_display(item)
+        display = case @name_args.length
+                  when 2
+                    item = load_item(@name_args[0], @name_args[1])
+                    display = format_for_display(item)
+                  when 1
+                    format_list_for_display(Chef::DataBag.load(@name_args[0]))
+                  else
+                    stdout.puts opt_parser
+                    exit(1)
+                  end
         output(display)
       end
     end
