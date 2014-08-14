@@ -29,7 +29,6 @@ module SecureDataBag
       end
 
       def encrypted_hash
-        pp "encrypted_hash"
         @encrypted_data ||= begin
           encrypt_hash(unencrypted_hash.dup) 
         end

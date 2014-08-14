@@ -12,11 +12,11 @@ module SecureDataBag
   #
 
   class SecureDataBagItem < Chef::DataBagItem
-    def initialize
+    def initialize(key=nil)
       super
 
-      @secret = nil
-      @key = nil
+      @secret = Chef::Config[:encrypted_data_bag_secret]
+      @key = key
       @cipher = nil
       @iv = nil
       @algorithm = nil
@@ -31,7 +31,6 @@ module SecureDataBag
     attr_reader :default_encoded_fields
 
     def secret(arg=nil)
-      arg ||= Chef::Config[:encrypted_data_bag_secret] if @secret.nil?
       set_or_return(:secret, arg, kind_of: String)
     end
 
@@ -41,28 +40,32 @@ module SecureDataBag
     end
 
     def load_key
-      unless secret
-        raise ArgumentError, "No secret specified and no secret found."
-      end
+      @key = self.load_secret(secret)
+    end
 
-      key = case secret
+    def self.load_secret(path=nil)
+      path ||= Chef::Config[:encrypted_data_bag_secret]
+      unless path
+       raise ArgumentError, "No secret specified and no secret found."
+      end
+      case path
       when /^\w+:\/\// # Remove key
         begin
           Kernel.open(path).read.strip
         rescue Errno::ECONNREFUSED
-          raise ArgumentError, "Remove key not available from '#{secret}'"
+          raise ArgumentError, "Remove key not available from '#{path}'"
         rescue OpenURI::HTTPError
-          raise ArgumentError, "Remove key not found at '#{secret}'"
+          raise ArgumentError, "Remove key not found at '#{path}'"
         end
       else
-        unless File.exist?(secret)
-          raise Errno::ENOENT, "file not found '#{secret}'"
+        unless File.exist?(path)
+          raise Errno::ENOENT, "file not found '#{path}'"
         end
-        IO.read(secret).strip
+        IO.read(path).strip
       end
 
       if key.size < 1
-        raise ArgumentError, "invalid zero length secret in '#{secret}'"
+        raise ArgumentError, "invalid zero length path in '#{path}'"
       end
       key
     end
@@ -99,6 +102,7 @@ module SecureDataBag
     end
 
     def raw_data=(enc_data)
+      enc_data = Mash.new(enc_data)
       super enc_data
       decode_data
     end
@@ -115,7 +119,7 @@ module SecureDataBag
         iv      encryption[:iv]
         encoded_fields  encryption[:encoded_fields]
 
-        @raw_data = decode_data
+        @raw_data = Decryptor.new(raw_data, encryption, key).for_decrypted_item
       end
       @raw_data
     end
@@ -128,15 +132,15 @@ module SecureDataBag
     # Transitions
     #
 
-    def self.from_hash(h)
+    def self.from_hash(h, key=nil)
       m = Mash.new(h)
-      item = new
+      item = new(key)
       item.raw_data = m
       item
     end
 
-    def self.from_item(h)
-      item = self.from_hash(h.to_hash)
+    def self.from_item(h, key=nil)
+      item = self.from_hash(h.to_hash, key)
       item.data_bag h.data_bag
       item
     end

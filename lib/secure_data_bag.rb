@@ -1,11 +1,9 @@
 
-module SecureDataBag
-end
-
 require "secure_data_bag/version"
-require "secure_data_bag/secure_data_bag_item.rb"
-require "secure_data_bag/decryptor.rb"
-require "secure_data_bag/encryptor.rb"
+require "secure_data_bag/knife"
+require "secure_data_bag/secure_data_bag_item"
+require "secure_data_bag/decryptor"
+require "secure_data_bag/encryptor"
 
 class Chef
   module DSL
@@ -25,6 +23,12 @@ class Chef
         secure
       end
     end
+  end
+end
+
+class Chef
+  class Knife
+    include SecureDataBag::Knife
   end
 end
 
