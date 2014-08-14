@@ -82,6 +82,7 @@ module SecureDataBag
     #
 
     def encoded_fields(arg=nil)
+      arg = arg.uniq if arg
       set_or_return(:encoded_fields, arg, kind_of: Array)
     end
 
@@ -134,10 +135,10 @@ module SecureDataBag
       item
     end
 
-    def self.from_data_bag_item(h)
+    def self.from_item(h)
       item = self.from_hash(h.to_hash)
       item.data_bag = h.data_bag
-     
+      item
     end
 
     def to_hash
