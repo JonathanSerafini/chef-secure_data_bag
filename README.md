@@ -72,7 +72,7 @@ SecureDataBagItem is also built on Mash rather than Hash so you'll find it more 
   }
 }
 
-> item.to_hash
+> item.raw_data
 { 
   id:         "databag", 
   chef_type:  "data_bag_item",
