@@ -17,7 +17,7 @@ class Chef
         if use_encryption
           Chef::EncryptedDataBagItem.load(item, read_secret).to_hash
         elsif use_secure_databag
-          SecureDataBag::SecureDataBagItem.from_item(output, read_secret)
+          SecureDataBag::Item.from_item(output, read_secret)
         else
           item
         end

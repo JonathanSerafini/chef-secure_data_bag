@@ -6,13 +6,8 @@ require 'base64'
 require 'digest/sha2'
 
 module SecureDataBag
-  class SecureDataBagItem
+  class Item
     class Encryptor
-      attr_reader :encryption
-      attr_reader :unencrypted_hash
-      attr_reader :encoded_fields
-      attr_reader :key
-
       def initialize(unencrypted_hash, encryption, key)
         @encryption = encryption
         @unencrypted_hash = unencrypted_hash
@@ -27,6 +22,11 @@ module SecureDataBag
         encryption_hash[:encoded_fields] = encoded_fields.uniq
         data.merge({encryption:encryption_hash})
       end
+
+      attr_reader :unencrypted_hash
+      attr_reader :encoded_fields
+      attr_reader :encryption
+      attr_reader :key
 
       def encrypted_hash
         @encrypted_data ||= begin
@@ -74,7 +74,6 @@ module SecureDataBag
 
       def openssl_encryptor
         @openssl_encryptor ||= begin
-          encryption[:iv] = nil if encryption[:iv].empty?
           encryptor = OpenSSL::Cipher::Cipher.new(encryption[:cipher])
           encryptor.encrypt
           encryption[:iv] ||= encryptor.random_iv

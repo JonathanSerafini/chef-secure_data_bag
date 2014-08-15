@@ -6,28 +6,22 @@ require 'base64'
 require 'digest/sha2'
 
 module SecureDataBag
-  class SecureDataBagItem
+  class Item
     class Decryptor
-      attr_reader :key
-      attr_reader :encryption
-      attr_reader :encrypted_hash
-
       def initialize(encrypted_hash, encryption, key)
         @encryption = encryption
         @encrypted_hash = encrypted_hash
         @key = key
+        @iv = nil
       end
 
       def for_decrypted_item
         decrypted_hash
       end
 
-      def decryption_error(e=nil)
-        msg = "Error decrypting data bag value"
-        msg << ": '#{e.message}'" if e
-        msg << ". Most likely the provided key is incorrect"
-        msg
-      end
+      attr_reader :encrypted_hash
+      attr_reader :encryption
+      attr_reader :key
 
       def iv
         @iv ||= begin
@@ -45,7 +39,15 @@ module SecureDataBag
       def decrypt_hash(hash)
         hash.each do |k,v|
           if encryption[:encoded_fields].include?(k)
-            v = decrypt_value(v)
+            begin
+              v = decrypt_value(v)
+            rescue Yajl::ParseError
+              raise DecryptionFailure, 
+                "Error decrypting data bag value for #{k}."
+            rescue OpenSSL::Cipher::CipherError => e
+              raise DecryptionFailure, 
+                "Error decrypting data bag value for #{k}: #{e.message}"
+            end
           elsif v.is_a? Hash
             v = decrypt_hash(v)
           end

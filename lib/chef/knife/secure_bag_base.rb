@@ -35,6 +35,21 @@ class Chef
       def use_secure_databag
         @raw_data["encryption"]
       end
+
+      def encoded_fields_for(item)
+        [].concat(config[:encode_fields]).
+          concat(item.encode_fields).
+          uniq
+      end
+
+      def require_secret
+        if not config[:secret] and not config[:secret_file]
+          show_usage
+          ui.fatal("A secret or secret_file must be specified")
+          exit 1
+        end
+      end
+
     end
   end
 end

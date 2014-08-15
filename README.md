@@ -2,6 +2,8 @@
 
 Provides a mechanism to partially encrypt data bag items on a per-key basis which gives us the opportunity to still search for every other field.
 
+When specifying keys to encrypt, the library will recursively walk through the data bag content searching for encryption candidates.
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -23,18 +25,36 @@ For the most part, this behaves exactly like a standard DataBagItem would. Encry
 SecureDataBagItem is also built on Mash rather than Hash so you'll find it more compatible with symbol keys. 
 
 ```
-data = { id:"databag", "value":"my string" }
-item = SecureDataBagItem.from_hash(data)
-item.raw_data
-item.encoded_fields ["value"]
-item.to_hash
+> secret_key = SecureDataBagItem.load_key("/path/to/secret")
+
+> secret_key = nil # Load default secret
+
+> data = { id:"databag", "encoded":"my string", "unencoded":"other string" }
+
+> item = SecureDataBagItem.from_hash(data, secret_key)
+
+> item.raw_data # Unencoded hash with data[:encryption] added
+{ id:"databag", "encoded":"my string", "unencoded":"other string", encryption:{ cipher:"aes-256-cbc", iv:nil, encoded_fields:[] } }
+
+> item.encode_fields ["encoded"]
+
+> item.to_hash # Encoded hash compatible with DataBagItem
+{ id:"databag", "encoded":"[encoded string]", "unencoded":"other string", encryption:{ cipher:"aes-256-cbc", iv:"[openssl hash]", encoded_fields:[] } }
+
+> item.raw_data # Unencoded hash with data[:encryption] added
+{ id:"databag", "encoded":"my string", "unencoded":"other string", encryption:{ cipher:"aes-256-cbc", iv:"[openssl hash]", encoded_fields:[] } }
+
 ```
 
-By default, this will use the system wide secret file. But this can be changed.
+A few knife commands are also provided which allow you to create / edit / show / from file any DataBagItem or EncryptedDataBagItem and convert them to SecureDataBag::Item format.
 
 ```
-item.secret "/path/to/file.pem"
-item.secret "uri://path/to/file.pem"
-item.cipher "aes-256-cbc"
+knife secure bag create data_bag item
+
+knife secure bag edit data_bag item
+
+knife secure bag show data_bag item
+
+knife secure bag from file data_bag /path/to/item.json
 ```
 

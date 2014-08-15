@@ -24,6 +24,8 @@ class Chef
         create_object({ id: @data_bag_item_name }, 
                       "data_bag_item[#{@data_bag_item_name}]") do |output|
 
+          @raw_data = output
+
           item =  if use_encryption
                     item = Chef::EncryptedDataBagItem.
                       encrypt_data_bag_item(output,read_secret)
@@ -31,14 +33,11 @@ class Chef
                     output
                   end
 
-          @raw_data = item.to_hash
-          if use_secure_databag or config[:encode_fields]
-            item = SecureDataBag::SecureDataBagItem.
-              from_item(item, read_secret).encode_data
-          end
-
+          item = SecureDataBag::Item.from_hash(item, read_secret)
+          item.encode_fields encoded_fields_for(item)
           item.data_bag(@data_bag_name)
-          rest.post_rest("data/#{@data_bag_name}", item)
+
+          rest.post_rest("data/#{@data_bag_name}", item.to_hash)
         end
       end
 
@@ -50,6 +49,8 @@ class Chef
           ui.fatal("You must specify a data bag name")
           exit 1
         end
+
+        require_secret
 
         begin
           Chef::DataBag.validate_name!(@data_bag_name)

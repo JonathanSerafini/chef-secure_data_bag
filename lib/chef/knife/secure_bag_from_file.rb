@@ -24,18 +24,17 @@ class Chef
         long:   "--all",
         description: "Upload all data bags or all items for specified databag"
 
-      def load_data_bag_item(item)
-        @raw_data = item.to_hash
+      def load_data_bag_hash(hash)
+        @raw_data = hash
 
         if use_encryption
-            Chef::EncryptedDataBagItem.
-              encrypt_data_bag_item(output, read_secret)
-        elsif use_secure_databag
-          item = SecureDataBag::SecureDataBagItem.
-            from_hash(item, read_secret)
-          item.encode_fields config[:encode_fields] if config[:encode_fields]
-          item.encode_data
+          item = Chef::EncryptedDataBagItem.
+                  encrypt_data_bag_item(output, read_secret)
         end
+
+        item = SecureDataBag::Item.from_hash(hash, read_secret)
+        item.encode_fields encoded_fields_for(item)
+        item.to_hash
       end
 
       def load_data_bag_items(data_bag, items=nil)
@@ -43,7 +42,7 @@ class Chef
         item_paths = normalize_item_paths(items)
         item_paths.each do |item_path|
           item = loader.load_from("#{data_bags_path}", data_bag, item_path)
-          item = load_data_bag_item(item)
+          item = load_data_bag_hash(item)
           dbag = Chef::DataBagItem.new
           dbag.data_bag(data_bag)
           dbag.raw_data = item
