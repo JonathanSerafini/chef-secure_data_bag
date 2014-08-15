@@ -29,7 +29,15 @@ class Chef
       end
       
       def use_encryption
-        @raw_data["encrypted_data"] ? super : false
+        if use_secure_databag then false
+        else
+          if @raw_data["encrypted_data"] or
+              @raw_data.reject { |k,v| k == "id" }.
+              all? { |k,v| v.key? "encrypted_data" }
+          then super
+          else false
+          end
+        end
       end
 
       def use_secure_databag
