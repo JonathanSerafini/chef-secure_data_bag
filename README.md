@@ -31,21 +31,60 @@ SecureDataBagItem is also built on Mash rather than Hash so you'll find it more 
 > data = { id:"databag", "encoded":"my string", "unencoded":"other string" }
 
 > item = SecureDataBagItem.from_hash(data, secret_key)
-
 > item.raw_data # Unencoded hash with data[:encryption] added
 { 
-  id:"databag", 
-  "encoded":"my string", "unencoded":"other string", 
-  encryption:{ cipher:"aes-256-cbc", iv:nil, encoded_fields:[] } 
+  id:         "databag", 
+  encoded:    "my string",
+  unencoded:  "other string", 
+  encryption:{
+    cipher:"aes-256-cbc",
+    iv:nil,
+    encoded_fields:[] 
+  }
+}
+
+> item.to_hash
+{ 
+  id:         "databag", 
+  chef_type:  "data_bag_item",
+  data_bag:   "",
+  encoded:    "my string",
+  unencoded:  "other string", 
+  encryption:{
+    cipher:"aes-256-cbc",
+    iv:nil,
+    encoded_fields:[] 
+  }
 }
 
 > item.encode_fields ["encoded"]
-
 > item.to_hash # Encoded hash compatible with DataBagItem
-{ id:"databag", "encoded":"[encoded string]", "unencoded":"other string", encryption:{ cipher:"aes-256-cbc", iv:"[openssl hash]", encoded_fields:[] } }
+{ 
+  id:         "databag", 
+  chef_type:  "data_bag_item",
+  data_bag:   "",
+  encoded:    "[encoded]",
+  unencoded:  "other string", 
+  encryption:{
+    cipher:"aes-256-cbc",
+    iv:nil,
+    encoded_fields:["encoded"]
+  }
+}
 
-> item.raw_data # Unencoded hash with data[:encryption] added
-{ id:"databag", "encoded":"my string", "unencoded":"other string", encryption:{ cipher:"aes-256-cbc", iv:"[openssl hash]", encoded_fields:[] } }
+> item.to_hash
+{ 
+  id:         "databag", 
+  chef_type:  "data_bag_item",
+  data_bag:   "",
+  encoded:    "my string",
+  unencoded:  "other string", 
+  encryption:{
+    cipher:"aes-256-cbc",
+    iv:nil,
+    encoded_fields:[] 
+  }
+}
 
 ```
 
