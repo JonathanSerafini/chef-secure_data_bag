@@ -26,7 +26,6 @@ SecureDataBagItem is also built on Mash rather than Hash so you'll find it more 
 
 ```
 > secret_key = SecureDataBagItem.load_key("/path/to/secret")
-
 > secret_key = nil # Load default secret
 
 > data = { id:"databag", "encoded":"my string", "unencoded":"other string" }
@@ -34,7 +33,11 @@ SecureDataBagItem is also built on Mash rather than Hash so you'll find it more 
 > item = SecureDataBagItem.from_hash(data, secret_key)
 
 > item.raw_data # Unencoded hash with data[:encryption] added
-{ id:"databag", "encoded":"my string", "unencoded":"other string", encryption:{ cipher:"aes-256-cbc", iv:nil, encoded_fields:[] } }
+{ 
+  id:"databag", 
+  "encoded":"my string", "unencoded":"other string", 
+  encryption:{ cipher:"aes-256-cbc", iv:nil, encoded_fields:[] } 
+}
 
 > item.encode_fields ["encoded"]
 
