@@ -8,6 +8,9 @@ require 'digest/sha2'
 module SecureDataBag
   class Item
     class Decryptor
+      class DecryptionFailure < StandardError
+      end
+
       def initialize(encrypted_hash, encryption, key)
         @encryption = encryption
         @encrypted_hash = encrypted_hash
