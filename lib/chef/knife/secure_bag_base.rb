@@ -27,13 +27,19 @@ class Chef
             default: Array.new
         end
       end
-      
+     
+      def encode_fields_to_array
+        unless config[:encode_fields].is_a?(Array)
+          config[:encode_fields] = config[:encode_fields].split(",")
+        end
+      end
+
       def use_encryption
         if use_secure_databag then false
         else
           if @raw_data["encrypted_data"] or
               @raw_data.reject { |k,v| k == "id" }.
-              all? { |k,v| v.key? "encrypted_data" }
+              all? { |k,v| v.is_a?(Hash) and v.key? "encrypted_data" }
           then super
           else false
           end
