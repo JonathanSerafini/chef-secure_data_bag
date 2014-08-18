@@ -24,7 +24,7 @@ class Chef
           option :encode_fields,
             long: "--encode-fields FIELD1,FIELD2,FIELD3",
             description: "List of attribute keys for which to encode values",
-            default: Array.new
+            default: ""
         end
       end
      
@@ -51,7 +51,7 @@ class Chef
       end
 
       def encoded_fields_for(item)
-        [].concat(config[:encode_fields]).
+        [].concat(config[:encode_fields].split(",")).
           concat(item.encode_fields).
           uniq
       end

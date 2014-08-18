@@ -18,8 +18,10 @@ class Chef
           item = Chef::EncryptedDataBagItem.new(@raw_data, read_secret)
         end
 
-        #item = SecureDataBag::Item.from_item(item, read_secret)
-        item.to_hash
+        item = SecureDataBag::Item.from_item(item, read_secret)
+        data = item.to_hash(false)
+        data[:encryption][:encoded_fields] = item.encode_fields
+        data
       end
 
       def run

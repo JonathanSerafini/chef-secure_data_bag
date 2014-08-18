@@ -119,6 +119,10 @@ module SecureDataBag
       set_or_return(:encode_fields, arg, kind_of: Array).uniq
     end
 
+    def encoded_fields
+      encryption[:encoded_fields]
+    end
+
     #
     # Encoder / Decoder
     #
