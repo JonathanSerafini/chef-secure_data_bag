@@ -82,7 +82,7 @@ module SecureDataBag
 
     def self.load(data_bag, name, opts={})
       data = super(data_bag, name)
-      new(data:data.to_hash, **opts)
+      new(opts.merge(data:data.to_hash))
     end
 
     #
@@ -175,12 +175,12 @@ module SecureDataBag
     #
 
     def self.from_hash(h, opts={})
-      item = new(data:h, **opts)
+      item = new(opts.merge(data:h))
       item
     end
 
     def self.from_item(h, opts={})
-      item = self.from_hash(h.to_hash, **opts)
+      item = self.from_hash(h.to_hash, opts)
       item.data_bag h.data_bag
       item
     end
