@@ -1,6 +1,8 @@
 
 require 'open-uri'
 require 'chef/data_bag_item'
+require 'chef/encrypted_data_bag_item/encryptor'
+require 'chef/encrypted_data_bag_item/decryptor'
 
 module SecureDataBag
   #
@@ -12,13 +14,21 @@ module SecureDataBag
   #
 
   class Item < Chef::DataBagItem
-    def initialize(key=nil)
+    def initialize(key=nil, fields:nil, secret:nil, data:nil)
       super()
 
       @secret = Chef::Config[:encrypted_data_bag_secret]
       @key = key
+
       @raw_data = {}
-      @encode_fields = ["password"]
+      unless data.nil?
+        self.raw_data = data
+      end
+      
+      @encoded_fields = Chef::Config[:secure_data_bag_fields] || ["password"]
+      unless fields.nil?
+        encoded_fields(fields)
+      end
     end
 
     #
@@ -69,22 +79,6 @@ module SecureDataBag
     end
 
     #
-    # Wrapper for raw_data encryption settings
-    # - always ensure that encryption hash is present
-    # - always ensure encryption settings have defaults
-    #
-
-    def encryption(arg=nil)
-      @raw_data[:encryption] ||= {}
-      @raw_data[:encryption] = arg unless arg.nil?
-      encryption = @raw_data[:encryption]
-      encryption[:iv] = nil if encryption[:iv].nil?
-      encryption[:cipher] = "aes-256-cbc" if encryption[:cipher].nil?
-      encryption[:encoded_fields] = [] if encryption[:encoded_fields].nil?
-      encryption
-    end
-
-    #
     # Setter for @raw_data
     # - ensure the data we receive is a Mash to support symbols
     # - pass it to DataBagItem for additional validation
@@ -95,88 +89,97 @@ module SecureDataBag
     def raw_data=(data)
       data = Mash.new(data)
       super data
-      encryption
       decode_data!
     end
 
     #
-    # Determine whether the data is encoded or not
-    # - yeah, it's pretty naive
-    #
-
-    def encoded?
-      not encryption[:encoded_fields].empty?
-    end
-
-    #
     # Fields we wish to encode
-    # - this differs from encryption[:encoded_fields] and will get merged
-    #   into the latter upon an encode
     #
 
-    def encode_fields(arg=nil)
-      arg = Array(arg).uniq if arg
+    def encoded_fields(arg=nil)
+      arg = arg.uniq if arg.is_a?(Array)
       set_or_return(:encode_fields, arg, kind_of: Array).uniq
     end
 
-    def encoded_fields
-      encryption[:encoded_fields]
-    end
-
     #
-    # Encoder / Decoder
+    # Raw Data decoder methods
     #
 
     def decode_data!
-      #
-      # Ensure that we save previously encoded fields into our list of fields
-      # we wish to encode next time
-      #
-      encode_fields.concat(encryption[:encoded_fields]).uniq!
-      @raw_data = decoded_data if encoded?
+      @raw_data = decoded_data
       @raw_data
     end
 
     def decoded_data
-      data = Decryptor.new(raw_data, encryption, key).for_decrypted_item
-      data[:encryption][:encoded_fields] = []
-      data
+      if encoded_value?(@raw_data) then decode_value(@raw_data)
+      else decode_hash(@raw_data)
+      end
     end
+
+    def decode_hash(hash)
+      hash.each do |k,v|
+        v = if encoded_value?(v) then decode_value(v)
+            elsif v.is_a?(Hash) then decode_hash(v)
+            else v
+            end
+        hash[k] = v
+      end
+      hash
+    end
+
+    def decode_value(value)
+      Chef::EncryptedDataBagItem::Decryptor.for(value, key).for_decrypted_item
+    end
+
+    def encoded_value?(value)
+      value.is_a?(Hash) and value.key?(:encrypted_data)
+    end
+
+    #
+    # Raw Data encoded methods
+    #
 
     def encode_data!
       @raw_data = encoded_data
+      @raw_data
     end
 
     def encoded_data
-      #
-      # When encoding data we'll merge those fields already encoded during
-      # the previous state, found in encryption[:encoded_fields] with those
-      # which we wish to encode
-      #
-      encryption = self.encryption.dup
-      encryption[:encoded_fields] = @encode_fields.
-        concat(encryption[:encoded_fields]).uniq
-      Encryptor.new(raw_data, encryption, key).for_encrypted_item
+      encode_hash(@raw_data.dup)
+    end
+
+    def encode_hash(hash)
+      hash.each do |k,v|
+        v = if encoded_fields.include?(k) then encode_value(v)
+            else encode_hash(v)
+            end
+        hash[k] = v
+      end
+      hash
+    end
+
+    def encode_value(value)
+      Chef::EncryptedDataBagItem::Encryptor.new(value, key).for_encrypted_item
     end
 
     #
     # Transitions
     #
 
-    def self.from_hash(h, key=nil)
-      item = new(key)
+    def self.from_hash(h, key:nil, fields:nil, secret:nil)
+      item = new(key, key, fields, secret)
       item.raw_data = h
       item
     end
 
-    def self.from_item(h, key=nil)
-      item = self.from_hash(h.to_hash, key)
+    def self.from_item(h, key:nil, fields:nil, secret:nil)
+      item = self.from_hash(h.to_hash, key, fields, secret)
       item.data_bag h.data_bag
       item
     end
 
     def to_hash(encoded = true)
-      result = encoded ? encoded_data : decoded_data
+      result = encoded ? encoded_data : @raw_data
       result["chef_type"] = "data_bag_item"
       result["data_bag"] = self.data_bag
       result
