@@ -21,39 +21,29 @@ class Chef
             description: "A file containing a secret key to use to encrypt data bag item values",
             proc: Proc.new { |sf| Chef::Config[:knife][:secret_file] = sf }
 
-          option :encode_fields,
+          option :encoded_fields,
             long: "--encode-fields FIELD1,FIELD2,FIELD3",
             description: "List of attribute keys for which to encode values",
             default: ""
         end
       end
-     
-      def encode_fields_to_array
-        unless config[:encode_fields].is_a?(Array)
-          config[:encode_fields] = config[:encode_fields].split(",")
+
+      def encoded_fields
+        encoded_fields = nil
+
+        if config[:encoded_fields]
+          if config[:encoded_fields].is_a?(String)
+            encoded_fields = config[:encoded_fields].split(",")
+          elsif config[:encoded_fields].is_a?(Array)
+            encoded_fields = config[:encoded_fields]
+          end
         end
+
+        encoded_fields
       end
 
       def use_encryption
-        if use_secure_databag then false
-        else
-          if @raw_data["encrypted_data"] or
-              @raw_data.reject { |k,v| k == "id" }.
-              all? { |k,v| v.is_a?(Hash) and v.key? "encrypted_data" }
-          then super
-          else false
-          end
-        end
-      end
-
-      def use_secure_databag
-        @raw_data["encryption"]
-      end
-
-      def encoded_fields_for(item)
-        [].concat(config[:encode_fields].split(",")).
-          concat(item.encode_fields).
-          uniq
+        true
       end
 
       def require_secret
@@ -62,6 +52,22 @@ class Chef
           ui.fatal("A secret or secret_file must be specified")
           exit 1
         end
+      end
+
+      def data_for_create(hash={})
+        hash[:id] = @data_bag_item_name
+        hash = data_for_edit(hash)
+        hash
+      end
+
+      def data_for_edit(hash)
+        hash[:_encoded_fields] = encoded_fields
+        hash
+      end
+
+      def data_for_save(hash)
+        @encoded_fields = hash.delete(:_encoded_fields)
+        hash
       end
 
     end

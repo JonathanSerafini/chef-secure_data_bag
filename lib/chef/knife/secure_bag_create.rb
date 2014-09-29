@@ -21,20 +21,13 @@ class Chef
       end
 
       def create_databag_item
-        create_object({ id: @data_bag_item_name }, 
+        create_object(initial_data, 
                       "data_bag_item[#{@data_bag_item_name}]") do |output|
 
-          @raw_data = output
+          @raw_data = data_for_save(output)
 
-          item =  if use_encryption
-                    item = Chef::EncryptedDataBagItem.
-                      encrypt_data_bag_item(output,read_secret)
-                  else
-                    output
-                  end
-
-          item = SecureDataBag::Item.from_hash(item, read_secret)
-          item.encode_fields encoded_fields_for(item)
+          item = SecureDataBag::Item.from_hash(@raw_data, read_secret)
+          item.encoded_fields(encoded_fields)
           item.data_bag(@data_bag_name)
 
           rest.post_rest("data/#{@data_bag_name}", item.to_hash)

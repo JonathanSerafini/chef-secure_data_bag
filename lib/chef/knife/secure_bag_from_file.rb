@@ -27,13 +27,7 @@ class Chef
       def load_data_bag_hash(hash)
         @raw_data = hash
 
-        if use_encryption
-          item = Chef::EncryptedDataBagItem.
-                  encrypt_data_bag_item(output, read_secret)
-        end
-
         item = SecureDataBag::Item.from_hash(hash, read_secret)
-        item.encode_fields encoded_fields_for(item)
         item.to_hash
       end
 
@@ -43,9 +37,10 @@ class Chef
         item_paths.each do |item_path|
           item = loader.load_from("#{data_bags_path}", data_bag, item_path)
           item = load_data_bag_hash(item)
-          dbag = Chef::DataBagItem.new
-          dbag.data_bag(data_bag)
+          dbag = SecureDataBag::Item.new(secret:read_secret)
+          dbag.encoded_fields encoded_fields
           dbag.raw_data = item
+          dbag.data_bag(data_bag)
           dbag.save
           ui.info("Updated data_bag_item[#{dbag.data_bag}::#{dbag.id}]")
         end

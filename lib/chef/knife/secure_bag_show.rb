@@ -11,16 +11,14 @@ class Chef
       category "secure bag"
 
       def load_item(bag, item_name)
-        item = Chef::DataBagItem.load(bag, item_name)
-        @raw_data = item.raw_data
+        item = SecureDataBag::Item.load(
+          bag, item_name, 
+          key: read_secret,
+          fields: encoded_fields
+        )
 
-        if use_encryption
-          item = Chef::EncryptedDataBagItem.new(@raw_data, read_secret)
-        end
-
-        item = SecureDataBag::Item.from_item(item, read_secret)
-        data = item.to_hash(false)
-        data[:encryption][:encoded_fields] = item.encode_fields
+        data = item.to_hash(encoded:false)
+        data = data_for_edit(data)
         data
       end
 
