@@ -16,6 +16,7 @@ class Chef
           key: read_secret,
           fields: encoded_fields
         )
+        item.encoded_fields(encoded_fields)
 
         data = item.to_hash(encoded:false)
         data = data_for_edit(data)

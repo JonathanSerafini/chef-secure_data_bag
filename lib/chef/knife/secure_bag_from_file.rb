@@ -12,7 +12,6 @@ class Chef
         require 'chef/data_bag_item'
         require 'chef/knife/core/object_loader'
         require 'chef/json_compat'
-        require 'chef/encrypted_data_bag_item'
         require 'secure_data_bag'
       end
 
@@ -27,7 +26,7 @@ class Chef
       def load_data_bag_hash(hash)
         @raw_data = hash
 
-        item = SecureDataBag::Item.from_hash(hash, read_secret)
+        item = SecureDataBag::Item.from_hash(hash, secret:read_secret)
         item.to_hash
       end
 

@@ -14,7 +14,7 @@ class Chef
         item = Chef::DataBagItem.load(bag, item_name)
         @raw_data = item.to_hash
 
-        item = SecureDataBag::Item.from_item(item, read_secret)
+        item = SecureDataBag::Item.from_item(item, key:read_secret)
         hash = item.to_hash(encoded: false)
         hash = data_for_edit(hash)
         hash
@@ -24,8 +24,8 @@ class Chef
         output = super
         output = data_for_save(output)
 
-        item = SecureDataBag::Item.from_hash(output, read_secret)
-        item.encode_fields encoded_fields
+        item = SecureDataBag::Item.from_hash(output, key:read_secret)
+        item.encoded_fields encoded_fields
         item.to_hash
       end
     end

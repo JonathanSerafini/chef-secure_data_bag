@@ -20,15 +20,15 @@ module SecureDataBag
       @secret = Chef::Config[:encrypted_data_bag_secret]
       @key = key
 
-      @raw_data = {}
       unless data.nil?
         self.raw_data = data
       end
-      
-      @encoded_fields = Chef::Config[:secure_data_bag_fields] || ["password"]
-      unless fields.nil?
-        encoded_fields(fields)
-      end
+
+      encoded_fields(
+        fields ||
+        Chef::Config[:knife][:secure_data_bag][:fields] ||
+        ["password"]
+      )
     end
 
     #
@@ -49,7 +49,9 @@ module SecureDataBag
     end
 
     def self.load_secret(path=nil)
-      path ||= Chef::Config[:encrypted_data_bag_secret]
+      path ||= 
+        Chef::Config[:knife][:secure_data_bag][:secret_file] ||
+        Chef::Config[:encrypted_data_bag_secret]
 
       unless path
        raise ArgumentError, "No secret specified and no secret found."
@@ -79,8 +81,8 @@ module SecureDataBag
     end
 
     def self.load(data_bag, name, opts={})
-      data = super
-      new(data:data, **opts)
+      data = super(data_bag, name)
+      new(data:data.to_hash, **opts)
     end
 
     #
@@ -93,7 +95,7 @@ module SecureDataBag
 
     def raw_data=(data)
       data = Mash.new(data)
-      super data
+      super(data)
       decode_data!
     end
 
@@ -103,7 +105,7 @@ module SecureDataBag
 
     def encoded_fields(arg=nil)
       arg = arg.uniq if arg.is_a?(Array)
-      set_or_return(:encode_fields, arg, kind_of: Array).uniq
+      set_or_return(:encoded_fields, arg, kind_of: Array, default:[]).uniq
     end
 
     #
@@ -195,7 +197,7 @@ module SecureDataBag
         name: self.object_name,
         json_class: "Chef::DataBagItem",
         chef_type: "data_bag_item",
-        data_bag: self.data_bag,
+        data_bag: data_bag,
         raw_data: encoded_data
       }
       result.to_json(*a)

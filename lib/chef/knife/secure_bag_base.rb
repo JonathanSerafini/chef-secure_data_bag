@@ -19,35 +19,43 @@ class Chef
           option :secret_file,
             long: "--secret-file SECRET_FILE",
             description: "A file containing a secret key to use to encrypt data bag item values",
-            proc: Proc.new { |sf| Chef::Config[:knife][:secret_file] = sf }
+            proc: Proc.new { |sf| 
+              Chef::Config[:encrypted_data_bag_secret] = sf 
+            }
 
-          option :encoded_fields,
-            long: "--encode-fields FIELD1,FIELD2,FIELD3",
+          option :secure_data_bag_fields,
+            long: "--encoded-fields FIELD1,FIELD2,FIELD3",
             description: "List of attribute keys for which to encode values",
-            default: ""
+            proc: Proc.new { |o|
+              Chef::Config[:knife][:secure_data_bag][:fields] = o.split(",")
+            }
         end
       end
 
-      def encoded_fields
-        encoded_fields = nil
+      def encoded_fields(arg=nil)
+        config[:secure_data_bag_fields] = arg unless arg.nil?
+        config[:secure_data_bag_fields] || 
+          Chef::Config[:knife][:secure_data_bag][:fields]
+      end
 
-        if config[:encoded_fields]
-          if config[:encoded_fields].is_a?(String)
-            encoded_fields = config[:encoded_fields].split(",")
-          elsif config[:encoded_fields].is_a?(Array)
-            encoded_fields = config[:encoded_fields]
-          end
-        end
-
-        encoded_fields
+      def secret_file
+        config[:secret] ||
+          Chef::Config[:knife][:secure_data_bag][:secret_file] ||
+          Chef::Config[:encrypted_data_bag_secret]
       end
 
       def use_encryption
         true
       end
 
+      def read_secret
+        if config[:secret] then config[:secret]
+        else SecureDataBag::Item.load_secret(secret_file)
+        end
+      end
+
       def require_secret
-        if not config[:secret] and not config[:secret_file]
+        if not config[:secret] and not secret_file
           show_usage
           ui.fatal("A secret or secret_file must be specified")
           exit 1
