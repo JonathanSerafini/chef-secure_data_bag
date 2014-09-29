@@ -78,6 +78,11 @@ module SecureDataBag
       key
     end
 
+    def self.load(data_bag, name, key:nil, fields:nil, secret:nil)
+      data = super
+      new(key, fields, secret, data)
+    end
+
     #
     # Setter for @raw_data
     # - ensure the data we receive is a Mash to support symbols
@@ -178,7 +183,7 @@ module SecureDataBag
       item
     end
 
-    def to_hash(encoded = true)
+    def to_hash(encoded: true)
       result = encoded ? encoded_data : @raw_data
       result["chef_type"] = "data_bag_item"
       result["data_bag"] = self.data_bag
