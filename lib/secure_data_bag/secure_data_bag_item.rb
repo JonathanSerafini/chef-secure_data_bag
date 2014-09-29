@@ -14,18 +14,18 @@ module SecureDataBag
   #
 
   class Item < Chef::DataBagItem
-    def initialize(key:nil, fields:nil, secret:nil, data:nil)
+    def initialize(opts={})
       super()
 
       @secret = Chef::Config[:encrypted_data_bag_secret]
-      @key = key
+      @key = opts[:key]
 
-      unless data.nil?
-        self.raw_data = data
+      unless opts[:data].nil?
+        self.raw_data = opts[:data]
       end
 
       encoded_fields(
-        fields ||
+        opts[:fields] ||
         Chef::Config[:knife][:secure_data_bag][:fields] ||
         ["password"]
       )
@@ -185,10 +185,10 @@ module SecureDataBag
       item
     end
 
-    def to_hash(encoded: true)
-      result = encoded ? encoded_data : @raw_data
+    def to_hash(opts={})
+      result = opts[:encoded] ? encoded_data : @raw_data
       result["chef_type"] = "data_bag_item"
-      result["data_bag"] = self.data_bag
+      result["data_bag"] = data_bag
       result
     end
 
