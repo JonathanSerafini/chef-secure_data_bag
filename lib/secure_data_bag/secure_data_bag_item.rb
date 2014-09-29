@@ -14,7 +14,7 @@ module SecureDataBag
   #
 
   class Item < Chef::DataBagItem
-    def initialize(key=nil, fields:nil, secret:nil, data:nil)
+    def initialize(key:nil, fields:nil, secret:nil, data:nil)
       super()
 
       @secret = Chef::Config[:encrypted_data_bag_secret]
@@ -78,9 +78,9 @@ module SecureDataBag
       key
     end
 
-    def self.load(data_bag, name, key:nil, fields:nil, secret:nil)
+    def self.load(data_bag, name, opts={})
       data = super
-      new(key, fields, secret, data)
+      new(data:data, **opts)
     end
 
     #
@@ -156,7 +156,8 @@ module SecureDataBag
     def encode_hash(hash)
       hash.each do |k,v|
         v = if encoded_fields.include?(k) then encode_value(v)
-            else encode_hash(v)
+            elsif v.is_a?(Hash) then encode_hash(v)
+            else v
             end
         hash[k] = v
       end
@@ -171,14 +172,13 @@ module SecureDataBag
     # Transitions
     #
 
-    def self.from_hash(h, key:nil, fields:nil, secret:nil)
-      item = new(key, key, fields, secret)
-      item.raw_data = h
+    def self.from_hash(h, opts={})
+      item = new(data:h, **opts)
       item
     end
 
-    def self.from_item(h, key:nil, fields:nil, secret:nil)
-      item = self.from_hash(h.to_hash, key, fields, secret)
+    def self.from_item(h, opts={})
+      item = self.from_hash(h.to_hash, **opts)
       item.data_bag h.data_bag
       item
     end
