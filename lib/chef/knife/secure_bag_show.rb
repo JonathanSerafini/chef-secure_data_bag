@@ -9,6 +9,12 @@ class Chef
 
       banner "knife secure bag show BAG [ITEM] (options)"
       category "secure bag"
+      
+      option :encoded,
+        long: "--encoded",
+        boolean: true,
+        description: "Whether we wish to display encoded values",
+        default: false
 
       def load_item(bag, item_name)
         item = SecureDataBag::Item.load(
@@ -18,8 +24,8 @@ class Chef
         )
         item.encoded_fields(encoded_fields)
 
-        data = item.to_hash(encoded:false)
-        data = data_for_edit(data)
+        data = item.to_hash(encoded:config[:encoded])
+        data = data_for_edit(data) unless config[:encoded]
         data
       end
 
