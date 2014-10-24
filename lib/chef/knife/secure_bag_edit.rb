@@ -26,7 +26,7 @@ class Chef
 
         item = SecureDataBag::Item.from_hash(output, key:read_secret)
         item.encoded_fields encoded_fields
-        item.to_hash
+        item.to_hash encoded:true
       end
     end
   end
