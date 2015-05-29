@@ -55,12 +55,11 @@ SecureDataBagItem is also built on Mash rather than Hash so you'll find it more 
 }
 ```
 
-A few knife commands are also provided which allow you to create / edit / show / from file any DataBagItem or EncryptedDataBagItem and convert them to SecureDataBag::Item format.
+A few knife commands are also provided which allow you to edit / show / from file any DataBagItem or EncryptedDataBagItem and convert them to SecureDataBag::Item format.
 
 ```
 knife secure bag --help
 ** SECURE BAG COMMANDS **
-knife secure bag create BAG [ITEM] (options)
 knife secure bag edit BAG [ITEM] (options)
 knife secure bag from file BAG FILE|FLDR [FILE|FLDR] (options)
 knife secure bag show BAG [ITEM] (options)
