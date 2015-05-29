@@ -39,9 +39,7 @@ class Chef
       end
 
       def secret_file
-        config[:secret] ||
-          Chef::Config[:knife][:secure_data_bag][:secret_file] ||
-          Chef::Config[:encrypted_data_bag_secret]
+        config[:secret] || SecureDataBag::Item.secret_path
       end
 
       def use_encryption
