@@ -4,7 +4,8 @@ class Chef
     module DataQuery
       def secure_data_bag_item(bag, item, cache: false)
         data_bag_item = begin
-          node.run_state[:secure_data_bag][bag] || {}
+          node.run_state[:secure_data_bag] ||= {}
+          node.run_state[:secure_data_bag][bag] ||= {}
           node.run_state[:secure_data_bag][bag][item]
         end if cache
 
