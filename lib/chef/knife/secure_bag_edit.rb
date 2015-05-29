@@ -14,17 +14,17 @@ class Chef
         item = Chef::DataBagItem.load(bag, item_name)
         @raw_data = item.to_hash
 
-        item = SecureDataBag::Item.from_item(item, key:read_secret)
+        item = SecureDataBag::Item.from_item(item)
         hash = item.to_hash(encoded: false)
         hash = data_for_edit(hash)
         hash
       end
 
-      def edit_item(item)
+      def edit_data(data, *args)
         output = super
         output = data_for_save(output)
 
-        item = SecureDataBag::Item.from_hash(output, key:read_secret)
+        item = SecureDataBag::Item.from_hash(output)
         item.encoded_fields encoded_fields
         item.to_hash encoded:true
       end
