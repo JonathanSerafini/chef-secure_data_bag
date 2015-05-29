@@ -13,33 +13,31 @@ class Chef
           option :secret,
             short:  "-s SECRET",
             long:   "--secret",
-            description: "The secret key to use to encrypt data bag item values",
-            proc: Proc.new { |s| Chef::Config[:knife][:secret] = s }
+            description: "The secret key to use to encrypt data bag item values"
 
           option :secret_file,
             long: "--secret-file SECRET_FILE",
-            description: "A file containing a secret key to use to encrypt data bag item values",
-            proc: Proc.new { |sf| 
-              Chef::Config[:encrypted_data_bag_secret] = sf 
-            }
+            description: "A file containing a secret key to use to encrypt data bag item values"
 
-          option :secure_data_bag_fields,
+          option :encoded_fields,
             long: "--encoded-fields FIELD1,FIELD2,FIELD3",
             description: "List of attribute keys for which to encode values",
-            proc: Proc.new { |o|
-              Chef::Config[:knife][:secure_data_bag][:fields] = o.split(",")
-            }
+            proc: Proc.new { |s| s.split(',') }
         end
       end
 
-      def encoded_fields(arg=nil)
-        config[:secure_data_bag_fields] = arg unless arg.nil?
-        config[:secure_data_bag_fields] || 
+      def encoded_fields
+        config[:encoded_fields] || 
           Chef::Config[:knife][:secure_data_bag][:fields]
       end
 
       def secret_file
-        config[:secret] || SecureDataBag::Item.secret_path
+        config[:secret_file] ||
+          SecureDataBag::Item.secret_path
+      end
+
+      def secret
+        @secret ||= read_secret
       end
 
       def use_encryption
@@ -53,7 +51,7 @@ class Chef
       end
 
       def require_secret
-        if not config[:secret] and not secret_file
+        if not secret
           show_usage
           ui.fatal("A secret or secret_file must be specified")
           exit 1
@@ -62,12 +60,6 @@ class Chef
 
       def data_for_create(hash={})
         hash[:id] = @data_bag_item_name
-        hash = data_for_edit(hash)
-        hash
-      end
-
-      def data_for_edit(hash)
-        hash[:_encoded_fields] = encoded_fields
         hash
       end
 

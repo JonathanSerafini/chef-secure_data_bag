@@ -16,7 +16,7 @@ class Chef
 
         item = SecureDataBag::Item.from_item(item)
         hash = item.to_hash(encoded: false)
-        hash = data_for_edit(hash)
+        hash["_encoded_fields"] = item.encoded_fields
         hash
       end
 
@@ -25,7 +25,8 @@ class Chef
         output = data_for_save(output)
 
         item = SecureDataBag::Item.from_hash(output)
-        item.encoded_fields encoded_fields
+        item.encoded_fields item.delete("_encoded_fields")
+        raise Exception.new item.encoded_fields
         item.to_hash encoded:true
       end
     end

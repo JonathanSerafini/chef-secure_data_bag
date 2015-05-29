@@ -24,10 +24,10 @@ class Chef
         description: "Upload all data bags or all items for specified databag"
 
       def load_data_bag_hash(hash)
-        @raw_data = hash
-
-        item = SecureDataBag::Item.from_hash(hash, secret:read_secret)
-        item.to_hash
+        item = SecureDataBag::Item.from_hash hash, 
+          fields: encoded_fields,
+          secret: secret
+        item
       end
 
       def load_data_bag_items(data_bag, items=nil)
@@ -36,12 +36,9 @@ class Chef
         item_paths.each do |item_path|
           item = loader.load_from("#{data_bags_path}", data_bag, item_path)
           item = load_data_bag_hash(item)
-          dbag = SecureDataBag::Item.new(secret:read_secret)
-          dbag.encoded_fields encoded_fields
-          dbag.raw_data = item
-          dbag.data_bag(data_bag)
-          dbag.save
-          ui.info("Updated data_bag_item[#{dbag.data_bag}::#{dbag.id}]")
+          item.data_bag(data_bag)
+          item.save
+          ui.info("Updated data_bag_item[#{item.data_bag}::#{item.id}]")
         end
       end
     end

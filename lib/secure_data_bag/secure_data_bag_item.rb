@@ -85,11 +85,9 @@ module SecureDataBag
     # Fields we wish to encode
     #
     def encoded_fields(arg=nil)
-      arg = arg.uniq if arg.is_a?(Array)
-      set_or_return(:encoded_fields, arg, 
-        kind_of: Array, 
-        default: Chef::Config[:knife][:secure_data_bag][:fields]
-      ).uniq
+      @encoded_fields = Array(arg).map{|s|s.to_s}.uniq if arg
+      @encoded_fields ||= Chef::Config[:knife][:secure_data_bag][:fields] ||
+                          Array.new
     end
 
     #
@@ -108,8 +106,11 @@ module SecureDataBag
 
     def decode_hash(hash)
       hash.each do |k,v|
-        v = if encoded_value?(v) then decode_value(v)
-            elsif v.is_a?(Hash) then decode_hash(v)
+        v = if encoded_value?(v)
+              encoded_fields encoded_fields << k
+              decode_value(v)
+            elsif v.is_a?(Hash)
+              decode_hash(v)
             else v
             end
         hash[k] = v
@@ -165,6 +166,7 @@ module SecureDataBag
     def self.from_item(h, opts={})
       item = self.from_hash(h.to_hash, opts)
       item.data_bag h.data_bag
+      item.encoded_fields h.encoded_fields
       item
     end
 
