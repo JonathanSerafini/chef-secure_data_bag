@@ -166,7 +166,7 @@ module SecureDataBag
     def self.from_item(h, opts={})
       item = self.from_hash(h.to_hash, opts)
       item.data_bag h.data_bag
-      item.encoded_fields h.encoded_fields
+      item.encoded_fields h.encoded_fields if h.respond_to?(:encoded_fields)
       item
     end
 
