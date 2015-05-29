@@ -5,7 +5,7 @@ class Chef
       def secure_data_bag_item(bag, item, cache: false)
         data_bag_item = begin
           node.run_state[:secure_data_bag][bag] || {}
-          node.run_state[:secure_bag_item][bag][item]
+          node.run_state[:secure_data_bag][bag][item]
         end if cache
 
         data_bag_item ||= begin
