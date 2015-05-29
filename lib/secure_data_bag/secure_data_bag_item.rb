@@ -1,6 +1,7 @@
 
 require 'open-uri'
 require 'chef/data_bag_item'
+require 'chef/encrypted_data_bag_item'
 require 'chef/encrypted_data_bag_item/encryptor'
 require 'chef/encrypted_data_bag_item/decryptor'
 
@@ -15,71 +16,53 @@ module SecureDataBag
 
   class Item < Chef::DataBagItem
     def initialize(opts={})
-      super()
-
-      @secret = Chef::Config[:encrypted_data_bag_secret]
-      @key = opts[:key]
-
-      unless opts[:data].nil?
-        self.raw_data = opts[:data]
+      # Chef 12.3 introduced the new option
+      begin super(chef_server_rest: opts.delete(:chef_server_rest))
+      rescue ArgumentError; super()
       end
 
-      encoded_fields(
-        opts[:fields] ||
-        Chef::Config[:knife][:secure_data_bag][:fields] ||
-        ["password"]
-      )
+      secret_path     opts[:secret_path] if opts[:secret_path]
+      secret          opts[:secret] if opts[:secret]
+      encoded_fields  opts[:fields] if opts[:fields]
+
+      self.raw_data = opts[:data] if opts[:data]
+      self
     end
 
     #
-    # Methods for encryption key
+    # Path to encryption key file
     #
+    def secret_path(arg=nil)
+      set_or_return :secret_path, arg, 
+        kind_of: String,
+        default: self.class.secret_path
+    end
 
+    def self.secret_path(arg=nil)
+      arg || 
+      Chef::Config[:knife][:secure_data_bag][:secret_file] ||
+      Chef::Config[:encrypted_data_bag_secret]
+    end
+
+    #
+    # Content of encryption secret
+    #
     def secret(arg=nil)
-      set_or_return(:secret, arg, kind_of: String)
+      @secret = arg unless arg.nil?
+      @secret ||= load_secret
     end
 
-    def key(arg=nil)
-      @key = arg unless arg.nil?
-      @key ||= load_key
-    end
-
-    def load_key
-      @key = self.class.load_secret(secret)
+    def load_secret
+      @secret = self.class.load_secret(secret_path)
     end
 
     def self.load_secret(path=nil)
-      path ||= 
-        Chef::Config[:knife][:secure_data_bag][:secret_file] ||
-        Chef::Config[:encrypted_data_bag_secret]
-
-      unless path
-       raise ArgumentError, "No secret specified and no secret found."
-      end
-
-      key = case path
-            when /^\w+:\/\// # Remove key
-              begin
-                Kernel.open(path).read.strip
-              rescue Errno::ECONNREFUSED
-                raise ArgumentError, "Remove key not available from '#{path}'"
-              rescue OpenURI::HTTPError
-                raise ArgumentError, "Remove key not found at '#{path}'"
-              end
-            else
-              unless File.exist?(path)
-                raise Errno::ENOENT, "file not found '#{path}'"
-              end
-              IO.read(path).strip
-            end
-
-      if key.size < 1
-        raise ArgumentError, "invalid zero length path in '#{path}'"
-      end
-
-      key
+      Chef::EncryptedDataBagItem.load_secret(secret_path(path))
     end
 
+    #
+    # Fetch databag item via DataBagItem and then optionally decrypt
+    #
     def self.load(data_bag, name, opts={})
       data = super(data_bag, name)
       new(opts.merge(data:data.to_hash))
@@ -92,7 +75,6 @@ module SecureDataBag
     # - ensure the data has the encryption hash
     # - decode the data
     #
-
     def raw_data=(data)
       data = Mash.new(data)
       super(data)
@@ -102,16 +84,17 @@ module SecureDataBag
     #
     # Fields we wish to encode
     #
-
     def encoded_fields(arg=nil)
       arg = arg.uniq if arg.is_a?(Array)
-      set_or_return(:encoded_fields, arg, kind_of: Array, default:[]).uniq
+      set_or_return(:encoded_fields, arg, 
+        kind_of: Array, 
+        default: Chef::Config[:knife][:secure_data_bag][:fields]
+      ).uniq
     end
 
     #
     # Raw Data decoder methods
     #
-
     def decode_data!
       @raw_data = decoded_data
       @raw_data
@@ -135,7 +118,8 @@ module SecureDataBag
     end
 
     def decode_value(value)
-      Chef::EncryptedDataBagItem::Decryptor.for(value, key).for_decrypted_item
+      Chef::EncryptedDataBagItem::Decryptor.
+        for(value, secret).for_decrypted_item
     end
 
     def encoded_value?(value)
@@ -145,7 +129,6 @@ module SecureDataBag
     #
     # Raw Data encoded methods
     #
-
     def encode_data!
       @raw_data = encoded_data
       @raw_data
@@ -167,13 +150,13 @@ module SecureDataBag
     end
 
     def encode_value(value)
-      Chef::EncryptedDataBagItem::Encryptor.new(value, key).for_encrypted_item
+      Chef::EncryptedDataBagItem::Encryptor.
+        new(value, secret).for_encrypted_item
     end
 
     #
     # Transitions
     #
-
     def self.from_hash(h, opts={})
       item = new(opts.merge(data:h))
       item
