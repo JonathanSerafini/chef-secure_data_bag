@@ -17,11 +17,12 @@ class Chef
         default: false
 
       def load_item(bag, item_name)
-        item = SecureDataBag::Item.load bag, item_name, 
+        item = SecureDataBag::Item.load(bag, item_name, 
           key: read_secret,
           fields: encoded_fields
+        )
 
-        data = item.to_hash
+        data = item.to_hash(encoded: config[:encoded])
         data["_encoded_fields"] = item.encoded_fields
         data
       end
