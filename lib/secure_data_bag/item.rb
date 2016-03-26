@@ -107,7 +107,7 @@ module SecureDataBag
     def decode_hash(hash)
       hash.each do |k,v|
         v = if encoded_value?(v)
-              encoded_fields encoded_fields << k
+              encoded_fields(encoded_fields + [k])
               decode_value(v)
             elsif v.is_a?(Hash)
               decode_hash(v)
