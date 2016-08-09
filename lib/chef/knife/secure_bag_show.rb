@@ -19,11 +19,9 @@ class Chef
       def load_item(bag, item_name)
         item = SecureDataBag::Item.load(bag, item_name, 
           key: read_secret,
-          fields: encoded_fields
+          encrypted_keys: encrypted_keys
         )
-
         data = item.to_hash(encoded: config[:encoded])
-        data["_encoded_fields"] = item.encoded_fields
         data
       end
 

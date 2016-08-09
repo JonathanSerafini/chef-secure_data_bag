@@ -19,21 +19,19 @@ class Chef
             long: "--secret-file SECRET_FILE",
             description: "A file containing a secret key to use to encrypt data bag item values"
 
-          option :encoded_fields,
-            long: "--encoded-fields FIELD1,FIELD2,FIELD3",
+          option :encrypted_keys,
+            long: "--encrypted-keys FIELD1,FIELD2,FIELD3",
             description: "List of attribute keys for which to encode values",
             proc: Proc.new { |s| s.split(',') }
         end
       end
 
-      def encoded_fields
-        config[:encoded_fields] || 
-          Chef::Config[:knife][:secure_data_bag][:fields]
+      def encrypted_keys
+        config[:encrypted_keys]
       end
 
       def secret_file
-        config[:secret_file] ||
-          SecureDataBag::Item.secret_path
+        config[:secret_file]
       end
 
       def secret
@@ -64,10 +62,8 @@ class Chef
       end
 
       def data_for_save(hash)
-        @encoded_fields = hash.delete(:_encoded_fields)
         hash
       end
-
     end
   end
 end

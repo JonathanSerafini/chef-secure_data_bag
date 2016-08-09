@@ -1,192 +1,217 @@
-
-require 'open-uri'
 require 'chef/data_bag_item'
 require 'chef/encrypted_data_bag_item'
-require 'chef/encrypted_data_bag_item/encryptor'
-require 'chef/encrypted_data_bag_item/decryptor'
+require 'secure_data_bag/constants'
+require 'secure_data_bag/decryptor'
+require 'secure_data_bag/encryptor'
 
 module SecureDataBag
-  #
-  # SecureDataBagItem extends the standard DataBagItem by providing it
-  # with encryption / decryption capabilities.
-  #
-  # Although it does provide methods which may be used to specifically perform
-  # crypto functions, it should be used the same way.
-  #
-
   class Item < Chef::DataBagItem
+    class << self
+      # Class method used to load the secret key from path
+      # @param path [String] the optional path to the file
+      # @return [String] the secret
+      # @since 3.0.0
+      def load_secret(path = nil)
+        path ||= (
+          Chef::Config[:knife][:secure_data_bag][:secret_file] ||
+          Chef::Config[:encrypted_data_bag_secret]
+        )
+        Chef::EncryptedDataBagItem.load_secret(path)
+      end
+
+      # Load a data_bag_item and convert into the a SecureDataBag::Item.
+      # @param data_bag [String] the data_bag to load the item from
+      # @param name [String] the data_bag_item id
+      # @param opts [Hash] optional options to pass to SecureDataBag::Item.new
+      # @return [SecureDataBag::Item]
+      # @since 3.0.0
+      def load(data_bag, name, opts={})
+        data = Chef::DataBagItem.load(data_bag, name)
+        item = new(opts.merge(data: data.to_hash))
+        item.data_bag data.data_bag
+        item
+      end
+
+      # Create a new SecureDataBag::Item from a hash and optional options.
+      # @param hash [Hash] the data 
+      # @param opts [Hash] the optional options to pass to Item.new
+      # @return [SecureDataBag::Item]
+      # @since 3.0.0
+      def from_hash(hash, opts={})
+        data = hash.dup
+        data.delete('chef_type')
+        data.delete('json_class')
+
+        metadata = data.delete(SecureDataBag::METADATA_KEY) || {}
+        metadata = metadata.merge(opts)
+
+        item = new(metadata)
+        item.data_bag(data.delete('data_bag')) if data.key?('data_bag')
+        item.raw_data = data.key?('raw_data') ? data['raw_data'] : data
+        item
+      end
+
+      # Create a new SecureDataBag::Item from a DataBagItem.
+      # @param data_bag_item [Chef::DataBagItem] the item to create from
+      # @param opts [Hash] the optional options ot pass to Item.new
+      # @return [SecureDataBag::Item]
+      # @since 3.0.0
+      def from_item(data_bag_item, opts={})
+        data = data_bag_item.to_hash
+        from_hash(data, opts)
+      end
+    end
+
+    # Initializer
+    # @param opts [Hash] optional options to configure the SecureDataBag::Item
+    #        opts[:data] the initial data to set
+    #        opts[:secret] the secret key to use when encrypting/decrypting
+    #        opts[:secret_path] the path to the secret key
+    #        opts[:encrypted_keys] an array of keys to encrypt
+    #        opts[:format] the SecureDataBag::Item format to enforce
+    # @since 3.0.0
     def initialize(opts={})
-      # Chef 12.3 introduced the new option
+      # Initiate the APIClient in Chef 12.3+
       begin super(chef_server_rest: opts.delete(:chef_server_rest))
       rescue ArgumentError; super()
       end
 
-      secret_path     opts[:secret_path] if opts[:secret_path]
-      secret          opts[:secret] if opts[:secret]
-      encoded_fields  opts[:fields] if opts[:fields]
+      # Optionally define the Item vesion
+      @version = opts[:version] || SecureDataBag::VERSION
+
+      # Optionally define the Item format
+      @format = opts[:format] || :nested
+
+      # Optionally provide the shared secret
+      @secret = opts[:secret] if opts[:secret]
+
+      # Optionally provide a path to the shared secret. If not provided, the 
+      # secret loader will automatically attempt to select one.
+      @secret_path = opts[:secret_path]
+
+      # Optionally provide a list of keys that should be encrypted or attempt
+      # to determine it based on configuration options.
+      @encrypted_keys = (
+        opts[:encrypted_keys] ||
+        Chef::Config[:knife][:secure_data_bag][:encrypted_keys] ||
+        Array.new
+      ).uniq
 
       self.raw_data = opts[:data] if opts[:data]
       self
     end
 
-    #
-    # Path to encryption key file
-    #
-    def secret_path(arg=nil)
-      set_or_return :secret_path, arg, 
-        kind_of: String,
-        default: self.class.secret_path
-    end
+    # Array of hash keys which should be encrypted when encrypting this item. 
+    # For previously decrypted items, this will contain the keys which has 
+    # previously been encrypted.
+    # @since 3.0.0
+    attr_accessor :encrypted_keys
 
-    def self.secret_path(arg=nil)
-      arg || 
-      Chef::Config[:knife][:secure_data_bag][:secret_file] ||
-      Chef::Config[:encrypted_data_bag_secret]
-    end
+    # Format to enforce when encrypting this Item. This item will automatically
+    # be updated when importing encrypted data.
+    # @since 3.0.0
+    attr_accessor :format
 
-    #
-    # Content of encryption secret
-    #
+    # Fetch, Set or optionally Load the shared secret
+    # @param arg [String] optionally set the shared set
+    # @return [String] the shared secret
+    # @since 3.0.0
     def secret(arg=nil)
       @secret = arg unless arg.nil?
       @secret ||= load_secret
     end
 
-    def load_secret
-      @secret = self.class.load_secret(secret_path)
+    # Hash representing the metadata associated to this Item
+    # @return [Hash] the metadata
+    # @since 3.0.0
+    def metadata
+      {
+        data_bag: @data_bag.to_s,
+        object_name: raw_data['id'].to_s,
+        encrypted_keys: @encrypted_keys,
+        format: @format,
+        version: @version
+      }
     end
 
-    def self.load_secret(path=nil)
-      Chef::EncryptedDataBagItem.load_secret(secret_path(path))
+    # Override the default setter to first ensure that the data is a Mash and
+    # then to automatically decrypt the data.
+    # @param new_data [Hash] the potentially encrypted data
+    # @since 3.0.0
+    def raw_data=(new_data)
+      data = Mash.new(new_data)
+      super(decrypt_data!(new_data))
     end
 
-    #
-    # Fetch databag item via DataBagItem and then optionally decrypt
-    #
-    def self.load(data_bag, name, opts={})
-      data = super(data_bag, name)
-      new(opts.merge(data:data.to_hash))
-    end
-
-    #
-    # Setter for @raw_data
-    # - ensure the data we receive is a Mash to support symbols
-    # - pass it to DataBagItem for additional validation
-    # - ensure the data has the encryption hash
-    # - decode the data
-    #
-    def raw_data=(data)
-      data = Mash.new(data)
-      super(data)
-      decode_data!
-    end
-
-    #
-    # Fields we wish to encode
-    #
-    def encoded_fields(arg=nil)
-      @encoded_fields = Array(arg).map{|s|s.to_s}.uniq if arg
-      @encoded_fields ||= Chef::Config[:knife][:secure_data_bag][:fields] ||
-                          Array.new
-    end
-
-    #
-    # Raw Data decoder methods
-    #
-    def decode_data!
-      @raw_data = decoded_data
-      @raw_data
-    end
-
-    def decoded_data
-      if encoded_value?(@raw_data) then decode_value(@raw_data)
-      else decode_hash(@raw_data)
-      end
-    end
-
-    def decode_hash(hash)
-      hash.each do |k,v|
-        v = if encoded_value?(v)
-              encoded_fields(encoded_fields + [k])
-              decode_value(v)
-            elsif v.is_a?(Hash)
-              decode_hash(v)
-            else v
-            end
-        hash[k] = v
-      end
-      hash
-    end
-
-    def decode_value(value)
-      Chef::EncryptedDataBagItem::Decryptor.
-        for(value, secret).for_decrypted_item
-    end
-
-    def encoded_value?(value)
-      value.is_a?(Hash) and value.key?(:encrypted_data)
-    end
-
-    #
-    # Raw Data encoded methods
-    #
-    def encode_data!
-      @raw_data = encoded_data
-      @raw_data
-    end
-
-    def encoded_data
-      encode_hash(@raw_data.dup)
-    end
-
-    def encode_hash(hash)
-      hash.each do |k,v|
-        v = if encoded_fields.include?(k) then encode_value(v)
-            elsif v.is_a?(Hash) then encode_hash(v)
-            else v
-            end
-        hash[k] = v
-      end
-      hash
-    end
-
-    def encode_value(value)
-      Chef::EncryptedDataBagItem::Encryptor.
-        new(value, secret).for_encrypted_item
-    end
-
-    #
-    # Transitions
-    #
-    def self.from_hash(h, opts={})
-      item = new(opts.merge(data:h))
-      item
-    end
-
-    def self.from_item(h, opts={})
-      item = self.from_hash(h.to_hash, opts)
-      item.data_bag h.data_bag
-      item.encoded_fields h.encoded_fields if h.respond_to?(:encoded_fields)
-      item
-    end
-
+    # Export this SecureDataBag::Item to a Chef::DataBagItem compatible hash
+    # @param opts [Hash] the optional options
+    # @return [Hash]
+    # @since 3.0.0
     def to_hash(opts={})
-      result = opts[:encoded] ? encoded_data : @raw_data
-      result["chef_type"] = "data_bag_item"
-      result["data_bag"] = data_bag
+      result = opts[:encoded] ? encrypt_data(raw_data) : raw_data
+      result['chef_type'] = 'data_bag_item'
+      result['data_bag'] = self.data_bag.to_s
       result
     end
 
+    # Export this SecureDataBag::Item to a Chef::DataBagItem compatible json
+    # @return [String]
+    # @since 3.0.0
     def to_json(*a)
       result = {
-        name: self.object_name,
-        json_class: "Chef::DataBagItem",
-        chef_type: "data_bag_item",
-        data_bag: data_bag,
-        raw_data: encoded_data
+        'name' => self.object_name,
+        'json_class' => 'Chef::DataBagItem',
+        'chef_type' => 'data_bag_item',
+        'data_bag' => self.data_bag.to_s,
+        'raw_data' => encrypt_data(raw_data)
       }
       result.to_json(*a)
+    end
+
+    private
+
+    # Load the shared secret from the configured secret_path (or auto-detect
+    # the path if undefined).
+    # @return [String] the shared secret
+    # @since 3.0.0
+    def load_secret
+      @secret = self.class.load_secret(@secret_path)
+    end
+
+    # Decrypt the data, save the both the decrypted_keys and format for 
+    # possible re-encryption, and return the descrypted hash.
+    # @param data [Hash] the potentially encrypted hash
+    # @param save [Boolean] whether to save the encrypted keys and format
+    # @return [Hash] the decrypted hash
+    # @since 3.0.0
+    def decrypt_data(data, save: false)
+      decryptor = SecureDataBag::Decryptor.for(data, secret)
+      decryptor.decrypt!
+      @encrypted_keys.concat(decryptor.decrypted_keys).uniq! if save
+      @format = decryptor.format if save
+      decryptor.decrypted_hash
+    end
+
+    def decrypt_data!(data)
+      decrypt_data(data, save: true)
+    end
+
+    # Encrypt the data and save the encrypted_keys.
+    # @param data [Hash] the hash to encrypt
+    # @param save [Boolean] whether to save the encrypted keys
+    # @return [Hash] the encrypted hash
+    # @since 3.0.0
+    def encrypt_data(data, save: false)
+      encryptor = SecureDataBag::Encryptor.new(data, secret, metadata)
+      encryptor.encrypt!
+      encryptor.encrypted_hash[SecureDataBag::METADATA_KEY] = metadata
+      encryptor.encrypted_hash
+    end
+
+    def encrypt_data!(data)
+      encrypt_data(data, save: true)
     end
   end
 end
 
+SecureDataBagItem = SecureDataBag::Item

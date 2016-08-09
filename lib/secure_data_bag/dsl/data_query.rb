@@ -17,11 +17,15 @@ module SecureDataBag
           Chef::Log.error("Failed to load secure data bag item: #{bag.inspect} #{item.inspect}")
           raise
         end
+
+        node.run_state[:secure_data_bag][bag][item] ||= data_bag_item if cache
+        data_bag_item
       end
 
-      def secure_data_bag_item!(item, fields=[])
+      def secure_data_bag_item!(item, keys=[])
         secure = SecureDataBag::Item.from_item item
-        secure.encoded_fields.concat(Array(fields))
+        secure.encrypted_keys.concat(Array(keys))
+        secure.encrypted_keys.uniq!
         secure
       end
     end

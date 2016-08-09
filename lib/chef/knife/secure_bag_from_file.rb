@@ -25,7 +25,7 @@ class Chef
 
       def load_data_bag_hash(hash)
         item = SecureDataBag::Item.from_hash hash, 
-          fields: encoded_fields,
+          keys: encoded_keys,
           secret: secret
         item
       end

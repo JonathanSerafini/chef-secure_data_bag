@@ -13,7 +13,7 @@ class Chef
       def load_item(bag, item_name)
         item = SecureDataBag::Item.load(bag, item_name)
         hash = item.to_hash(encoded: false)
-        hash["_encoded_fields"] = item.encoded_fields
+        hash["_encoded_keys"] = item.encoded_keys
         hash
       end
 
@@ -30,18 +30,18 @@ class Chef
         # Allow the user to modify the content
         edited_item = edit_hash(item)
 
-        # Fetch the fields that are to be encoded
-        fields_to_encode = edited_item.delete("_encoded_fields")
-        if fields_to_encode and not fields_to_encode.empty?
-          ui.info("Saving with secure fields: #{fields_to_encode.join(", ")}")
+        # Fetch the keys that are to be encoded
+        keys_to_encode = edited_item.delete("_encoded_keys")
+        if keys_to_encode and not keys_to_encode.empty?
+          ui.info("Saving with secure keys: #{keys_to_encode.join(", ")}")
         else
-          ui.info("Saving without any secure fields")
+          ui.info("Saving without any secure keys")
         end
 
         # Generate a new SecureBagItem
         item_to_save = SecureDataBag::Item.new(
           data: edited_item,
-          fields: fields_to_encode
+          keys: keys_to_encode
         )
         item_to_save.data_bag @name_args[0] # Set data_bag to match initial
         item_to_save["id"] = @name_args[1]     # Ensure id was not changed
