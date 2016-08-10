@@ -101,7 +101,7 @@ module SecureDataBag
       @encrypted_keys = (
         opts[:encrypted_keys] ||
         Chef::Config[:knife][:secure_data_bag][:encrypted_keys] ||
-        Array.new
+        []
       ).uniq
 
       self.raw_data = opts[:data] if opts[:data]
@@ -137,12 +137,12 @@ module SecureDataBag
     # @return [Hash] the metadata
     # @since 3.0.0
     def metadata
-      Mash.new({
+      Mash.new(
         encryption_format: @encryption_format,
         decryption_format: @decryption_format,
         encrypted_keys: @encrypted_keys,
         version: @version
-      })
+      )
     end
 
     # Override the default setter to first ensure that the data is a Mash and
@@ -174,7 +174,7 @@ module SecureDataBag
       opts = Mash.new(opts)
       result = to_data(opts)
       result['chef_type'] = 'data_bag_item'
-      result['data_bag'] = self.data_bag.to_s
+      result['data_bag'] = data_bag.to_s
       result
     end
 
@@ -183,10 +183,10 @@ module SecureDataBag
     # @since 3.0.0
     def to_json(*a)
       result = {
-        'name' => self.object_name,
+        'name' => object_name,
         'json_class' => 'Chef::DataBagItem',
         'chef_type' => 'data_bag_item',
-        'data_bag' => self.data_bag.to_s,
+        'data_bag' => data_bag.to_s,
         'raw_data' => encrypt_data(raw_data)
       }
       result.to_json(*a)
@@ -225,7 +225,7 @@ module SecureDataBag
     # @param save [Boolean] whether to save the encrypted keys
     # @return [Hash] the encrypted hash
     # @since 3.0.0
-    def encrypt_data(data, save: false)
+    def encrypt_data(data, _save: false)
       encryptor = SecureDataBag::Encryptor.new(data, secret, metadata)
       encryptor.encrypt!
       encryptor.encrypted_hash

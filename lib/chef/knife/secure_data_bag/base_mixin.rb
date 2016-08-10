@@ -24,18 +24,18 @@ class Chef
           base.option :encrypted_keys,
             description: 'Comma delimited list of keys which should be encrypted, in addition to what was previously there',
             long: '--enc-keys FIELD1,FIELD2,FIELD3',
-            proc: Proc.new { |s| s.split(',') }
+            proc: proc { |s| s.split(',') }
         end
 
         # Metadata to use when interacting with SecureDataBag containing
         # overrides specified on the command-line.
         # @since 3.0.0
         def config_metadata
-          Mash.new({
+          Mash.new(
             encryption_format: config[:encryption_format],
             decryption_format: config[:decryption_format],
             encrypted_keys: encrypted_keys
-          })
+          )
         end
 
         # Load a data_bag_item from Chef Server
@@ -58,8 +58,8 @@ class Chef
         # @since 3.0.0
         def create_item(data_bag, item_name, data = {}, metadata = {})
           item = ::SecureDataBag::Item.new(metadata)
-          item.raw_data = data_data
-          item.data_bag bag
+          item.raw_data = { 'id' => item_name }.merge(data)
+          item.data_bag data_bag
           item
         end
 
@@ -71,8 +71,7 @@ class Chef
         def encrypted_keys
           Array(config[:encrypted_keys]).concat(
             Array(Chef::Config[:knife][:secure_data_bag][:encrypted_keys])
-          ).
-          uniq
+          ).uniq
         end
       end
     end

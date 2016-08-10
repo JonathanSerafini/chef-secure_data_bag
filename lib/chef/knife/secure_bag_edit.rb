@@ -35,16 +35,14 @@ class Chef
 
         # Generate a new SecureBagItem
         item_to_save = ::SecureDataBag::Item
-                         .from_hash(edited_item, item_metadata)
+                       .from_hash(edited_item, item_metadata)
         item_to_save.data_bag @name_args[0]
         item_to_save['id'] = @name_args[1]
-        item_to_save.save
 
+        item_to_save.save
         stdout.puts("Saved as #{@name_args[0]}[#{@name_args[1]}]")
 
-        if should_export?
-          export!(@name_args[0], @name_args[1], item_to_save)
-        end
+        export!(@name_args[0], @name_args[1], item_to_save) if should_export?
 
         if config[:print_after]
           data_to_print = item_to_save.to_hash

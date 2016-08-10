@@ -23,7 +23,7 @@ class Chef
         def secret
           @secret ||= begin
             secret = load_secret
-            if not secret
+            unless secret
               ui.fatal('A secret or secret_file must be specified')
               show_usage
               exit 1
@@ -39,7 +39,7 @@ class Chef
         # @since 3.0.0
         def secret_file
           config[:secret_file] ||
-          Chef::Config[:knife][:secure_data_bag][:secret_file]
+            Chef::Config[:knife][:secure_data_bag][:secret_file]
         end
 
         # Load the shared secret, either from command line parameters or from

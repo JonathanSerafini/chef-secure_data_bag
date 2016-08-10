@@ -13,7 +13,7 @@ module SecureDataBag
           Chef::DataBag.validate_name!(bag.to_s)
           SecureDataBag::Item.validate_id!(item)
           SecureDataBag::Item.load(bag, item)
-        rescue Exception
+        rescue StandardError
           Chef::Log.error("Failed to load secure data bag item: #{bag.inspect} #{item.inspect}")
           raise
         end

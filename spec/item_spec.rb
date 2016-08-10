@@ -9,7 +9,7 @@ describe SecureDataBag::Item do
   let(:fields) { ['encoded'] }
 
   let(:simple_data) { { 'id' => 'test', decoded: 'decoded', encoded: 'encoded' } }
-  let(:nested_data) { simple_data.merge({ nested: simple_data }) }
+  let(:nested_data) { simple_data.merge(nested: simple_data) }
 
   let(:item) { SecureDataBag::Item.new(key: key, fields: fields) }
 

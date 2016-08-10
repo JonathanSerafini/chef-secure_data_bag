@@ -55,7 +55,7 @@ class Chef
           end
 
           display_path = export_path(data_bag, item_name)
-                         .sub(/^#{export_root}\//, '')
+                         .sub(%r{/^#{export_root}/}, '')
           stdout.puts("Exported to #{display_path}")
         end
 
@@ -63,7 +63,7 @@ class Chef
 
         def export_root
           config[:export_root] ||
-          Chef::Config[:knife][:secure_data_bag][:export_root]
+            Chef::Config[:knife][:secure_data_bag][:export_root]
         end
 
         def export_path(data_bag, item_name)
