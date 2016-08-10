@@ -40,7 +40,7 @@ class Chef
 				item_to_save['id'] = @name_args[1]
         item_to_save.save
 
-        stdout.puts("Saved data_bag_item[#{@name_args[1]}]")
+        stdout.puts("Saved as #{@name_args[0]}[#{@name_args[1]}]")
 
         if should_export?
           export!(@name_args[0], @name_args[1], item_to_save)
