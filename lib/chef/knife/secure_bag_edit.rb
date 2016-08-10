@@ -42,7 +42,7 @@ class Chef
 
         stdout.puts("Saved data_bag_item[#{@name_args[1]}]")
 
-        if config[:export]
+        if should_export?
           export!(@name_args[0], @name_args[1], item_to_save)
         end
 

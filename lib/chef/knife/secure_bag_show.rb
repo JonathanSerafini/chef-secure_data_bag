@@ -33,7 +33,7 @@ class Chef
         data = item.to_hash(metadata: true)
         data = format_for_display(data)
 
-        if config[:export]
+        if should_export?
           export!(@name_args[0], @name_args[1], item)
         end
 
