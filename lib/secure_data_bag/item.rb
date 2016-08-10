@@ -26,9 +26,13 @@ module SecureDataBag
       # @return [SecureDataBag::Item]
       # @since 3.0.0
       def load(data_bag, name, opts={})
-        data = Chef::DataBagItem.load(data_bag, name)
-        item = new(opts.merge(data: data.to_hash))
-        item.data_bag data.data_bag
+        data = { 
+          'data_bag' => data_bag,
+          'id' => name
+        }.merge(
+          Chef::DataBagItem.load(data_bag, name).to_hash
+        )
+        item = from_hash(data, opts)
         item
       end
 
@@ -42,7 +46,7 @@ module SecureDataBag
         data.delete('chef_type')
         data.delete('json_class')
 
-        metadata = data.delete(SecureDataBag::METADATA_KEY) || {}
+        metadata = Mash.new(data.delete(SecureDataBag::METADATA_KEY) || {})
         metadata = metadata.merge(opts)
 
         item = new(metadata)
@@ -71,6 +75,8 @@ module SecureDataBag
     #        opts[:format] the SecureDataBag::Item format to enforce
     # @since 3.0.0
     def initialize(opts={})
+      opts = Mash.new(opts)
+
       # Initiate the APIClient in Chef 12.3+
       begin super(chef_server_rest: opts.delete(:chef_server_rest))
       rescue ArgumentError; super()
@@ -79,8 +85,9 @@ module SecureDataBag
       # Optionally define the Item vesion
       @version = opts[:version] || SecureDataBag::VERSION
 
-      # Optionally define the Item format
-      @format = opts[:format] || :nested
+      # Optionally define the Item formats
+      @encryption_format = opts[:encryption_format]
+      @decryption_format = opts[:decryption_format]
 
       # Optionally provide the shared secret
       @secret = opts[:secret] if opts[:secret]
@@ -110,7 +117,12 @@ module SecureDataBag
     # Format to enforce when encrypting this Item. This item will automatically
     # be updated when importing encrypted data.
     # @since 3.0.0
-    attr_accessor :format
+    attr_accessor :encryption_format
+
+    # Format to enforce when decrypting this Item. This item will automatically
+    # be updated when importing decrypted data.
+    # @since 3.0.0
+    attr_accessor :decryption_format
 
     # Fetch, Set or optionally Load the shared secret
     # @param arg [String] optionally set the shared set
@@ -125,13 +137,12 @@ module SecureDataBag
     # @return [Hash] the metadata
     # @since 3.0.0
     def metadata
-      {
-        data_bag: @data_bag.to_s,
-        object_name: raw_data['id'].to_s,
+      Mash.new({
+        encryption_format: @encryption_format,
+        decryption_format: @decryption_format,
         encrypted_keys: @encrypted_keys,
-        format: @format,
         version: @version
-      }
+      })
     end
 
     # Override the default setter to first ensure that the data is a Mash and
@@ -139,8 +150,20 @@ module SecureDataBag
     # @param new_data [Hash] the potentially encrypted data
     # @since 3.0.0
     def raw_data=(new_data)
-      data = Mash.new(new_data)
+      new_data = Mash.new(new_data)
+      new_data.delete(SecureDataBag::METADATA_KEY)
       super(decrypt_data!(new_data))
+    end
+
+    # Export this SecureDataBag::Item to it's raw_data
+    # @param opts [Hash] the optional options
+    # @return [Hash]
+    # @since 3.0.0
+    def to_data(opts={})
+      opts = Mash.new(opts)
+      result = encrypt_data(raw_data)
+      result[SecureDataBag::METADATA_KEY] = metadata if opts[:metadata]
+      result
     end
 
     # Export this SecureDataBag::Item to a Chef::DataBagItem compatible hash
@@ -148,7 +171,8 @@ module SecureDataBag
     # @return [Hash]
     # @since 3.0.0
     def to_hash(opts={})
-      result = opts[:encoded] ? encrypt_data(raw_data) : raw_data
+      opts = Mash.new(opts)
+      result = to_data(opts)
       result['chef_type'] = 'data_bag_item'
       result['data_bag'] = self.data_bag.to_s
       result
@@ -185,10 +209,10 @@ module SecureDataBag
     # @return [Hash] the decrypted hash
     # @since 3.0.0
     def decrypt_data(data, save: false)
-      decryptor = SecureDataBag::Decryptor.for(data, secret)
+      decryptor = SecureDataBag::Decryptor.for(data, secret, metadata)
       decryptor.decrypt!
       @encrypted_keys.concat(decryptor.decrypted_keys).uniq! if save
-      @format = decryptor.format if save
+      @decryption_format = decryptor.format if save
       decryptor.decrypted_hash
     end
 
@@ -204,7 +228,6 @@ module SecureDataBag
     def encrypt_data(data, save: false)
       encryptor = SecureDataBag::Encryptor.new(data, secret, metadata)
       encryptor.encrypt!
-      encryptor.encrypted_hash[SecureDataBag::METADATA_KEY] = metadata
       encryptor.encrypted_hash
     end
 

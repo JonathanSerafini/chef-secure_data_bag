@@ -12,10 +12,12 @@ module SecureDataBag
     #
     # @param encrypted_hash [Hash] the encrypted hash to decrypt
     # @param secret [String]
+    # @param metadata [Hash] the optional metdata to configure the decryptor
     # @return [SecureDataBag::NestedDecryptor] the object capable of decrypting
     # @since 3.0.0
-    def self.for(encrypted_hash, secret)
-      NestedDecryptor.new(encrypted_hash, secret)
+    def self.for(encrypted_hash, secret, metadata = {})
+      metadata = Mash.new(metadata)
+      NestedDecryptor.new(encrypted_hash, secret, metadata)
     end
   end
 
@@ -41,33 +43,35 @@ module SecureDataBag
     attr_reader :decrypted_hash
 
     # The format of this DataBagItem.
-    # May be one of :item, :encrypted, :nested, where:
-    # - :item refers to a plain DataBagItem
-    # - :encrypted refers to an EncryptedDataBagItem
-    # - :nested refers to a SecureDataBagItem with nested values
+    # May be one of:
+    # - encrypted refers to an EncryptedDataBagItem
+    # - nested refers to a SecureDataBagItem with nested values
+    # - plain refers to a plain DataBagItem
     # @since 3.0.0
     attr_reader :format
 
     # Initializer
     # @param encrypted_hash [Hash,String] the encrypted hash to decrypt
     # @param secret [String] the secret to decrypt with
+    # @param metadata [Hash] the optional metdata to configure the decryptor
     # @since 3.0.0
-    def initialize(encrypted_hash, secret)
+    def initialize(encrypted_hash, secret, metadata = {})
       @secret = secret
 
       @decrypted_keys = []
       @encrypted_hash = encrypted_hash
       @decrypted_hash = {}
 
-      @format = if @encrypted_hash.key?(SecureDataBag::METADATA_KEY)
-                  :nested
-                elsif encrypted?(@encrypted_hash)
-                  :encrypted
-                elsif partially_encrypted?(@encrypted_hash)
-                  :nested
-                else
-                  :item
-                end
+      @format = metadata[:decryption_format] ||
+        if @encrypted_hash.key?(SecureDataBag::METADATA_KEY)
+          'nested'
+        elsif encrypted?(@encrypted_hash)
+          'encrypted'
+        elsif partially_encrypted?(@encrypted_hash)
+          'nested'
+        else
+          'plain'
+        end
     end
 
     # Method called to decrypt the data structure and return it.
@@ -118,6 +122,7 @@ module SecureDataBag
         value = if looks_like_encrypted?(value)
                   @decrypted_keys.push(key) unless @decrypted_keys
                                                    .include?(key)
+                  #pp @format + ' -- ' + decrypt_value(value).class
                   decrypt_value(value)
                 elsif value.is_a?(Hash)
                   decrypt_hash(value)
@@ -134,8 +139,12 @@ module SecureDataBag
     # @return [Mix] the unencrypted value
     # @since 3.0.0
     def decrypt_value(value)
-      Chef::EncryptedDataBagItem::Decryptor
-        .for(value, @secret).for_decrypted_item
+      case @format
+      when 'plain' then value
+      else
+        Chef::EncryptedDataBagItem::Decryptor
+          .for(value, @secret).for_decrypted_item
+      end
     end
   end
 end

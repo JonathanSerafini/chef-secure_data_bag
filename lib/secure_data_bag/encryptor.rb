@@ -15,15 +15,78 @@ module SecureDataBag
     # @return [SecureDataBag::NestedDecryptor] the object capable of decrypting
     # @since 3.0.0
     def self.new(raw_hash, secret, metadata = {})
-      case format = (metadata[:format] || :nested)
-      when :nested
-        SecureDataBag::NestedEncryptor.new(raw_hash, secret, metadata)
-      when :encrypted
-        Chef::EnryptedDataBagItem::Encryptor.new(raw_hash, secret)
+      metadata = Mash.new(metadata)
+      format = (metadata[:encryption_format] || metadata[:decryption_format])
+      case format
+      when 'encrypted'
+        SecureDataBag::FlatEncryptor.new(raw_hash, secret, metadata)
       else
         SecureDataBag::NestedEncryptor.new(raw_hash, secret, metadata)
       end
     end
+  end
+
+  # Encryptor object responsable for encrypting the raw_hash with the 
+  # secret. This object is just a wrapper around
+  # Chef::EncryptedDataBagItem.
+  # 
+  # @since 3.0.0
+  class FlatEncryptor
+    # The keys to encrypt
+    # @since 3.0.0
+    attr_reader :encrypted_keys
+
+    # The encrypted hash generated
+    # @since 3.0.0
+    attr_reader :encrypted_hash
+
+    # The decrypted hash to encrypt
+    # @since 3.0.0
+    attr_reader :decrypted_hash
+
+    # The metadata used to create the encrypted_hash
+    attr_reader :metadata
+
+    # Initializer
+    # @param decrypted_hash [Hash,String] the encrypted hash to encrypt
+    # @param secret [String] the secret to encrypt with
+    # @param metadata [Hash] optional metadata
+    # @since 3.0.0
+    def initialize(decrypted_hash, secret, metadata = {})
+      @secret = secret
+      @metadata = metadata
+      @encrypted_hash = {}
+      @encrypted_keys = []
+      @decrypted_hash = decrypted_hash
+    end
+
+    # Method called to encrpt the data structure and return it.
+    # @return [Hash] the encrypted value
+    # @since 3.0.0
+    def encrypt!
+      @encrypted_hash = encrypt
+    end
+
+    # Method called to encrpt the data structure and return it.
+    # @return [Hash] the encrypted value
+    # @since 3.0.0
+    def encrypt
+      ## NO WORKY
+      ## NO WORKY
+      ## NO WORKY
+      ## NO WORKY
+      ## NO WORKY
+      ## NO WORKY
+      Chef::EncryptedDataBagItem.encrypt_data_bag_item(
+        @decrypted_hash,
+        @secret
+      )
+    end
+
+    # Method name preserved for compatibility with
+    # Chef::EncryptedDataBagItem::Encryptor.
+    # @since 3.0.0
+    alias :for_encrypted_item :encrypt!
   end
 
   # Encryptor object responsable for encrypting the raw_hash with the 
@@ -55,9 +118,12 @@ module SecureDataBag
     def initialize(decrypted_hash, secret, metadata = {})
       @secret = secret
       @metadata = metadata
-      @encrypted_keys = (metadata[:encrypted_keys] || [])
-      @decrypted_hash = decrypted_hash
       @encrypted_hash = {}
+      @encrypted_keys = case metadata[:encryption_format]
+                        when 'plain' then @encrypted_keys = []
+                        else metadata[:encrypted_keys] || []
+                        end
+      @decrypted_hash = decrypted_hash
     end
 
     # Method called to encrpt the data structure and return it.

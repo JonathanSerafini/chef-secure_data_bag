@@ -23,8 +23,7 @@ module SecureDataBag
     # Chef::EncryptedDataBagItem::Encryptor::VersionXEncryptor.
     def looks_like_partially_encrypted?(data)
       return false unless data.is_a?(Hash)
-      is_encrypted = looks_like_encrypted?(data)
-      is_encrypted || partially_encrypted?(data)
+      looks_like_encrypted?(data) || partially_encrypted?(data)
     end
   end
 end
