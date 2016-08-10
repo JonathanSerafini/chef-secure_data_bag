@@ -22,10 +22,8 @@ module SecureDataBag
         data_bag_item
       end
 
-      def secure_data_bag_item!(item, keys=[])
-        secure = SecureDataBag::Item.from_item item
-        secure.encrypted_keys.concat(Array(keys))
-        secure.encrypted_keys.uniq!
+      def secure_data_bag_item!(item, metadata = {})
+        secure = SecureDataBag::Item.from_item(item, metadata)
         secure
       end
     end
