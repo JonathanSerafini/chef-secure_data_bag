@@ -54,7 +54,9 @@ class Chef
             f.write(Chef::JSONCompat.to_json_pretty(data))
           end
 
-          stdout.puts("Exported to #{export_path(data_bag, item_name)}")
+          display_path = export_path(data_bag, item_name)
+                         .sub(/^#{ENV['PWD']}\//,'')
+          stdout.puts("Exported to #{display_path}")
         end
 
         private
