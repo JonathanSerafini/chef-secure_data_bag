@@ -25,8 +25,8 @@ module SecureDataBag
       # @param opts [Hash] optional options to pass to SecureDataBag::Item.new
       # @return [SecureDataBag::Item]
       # @since 3.0.0
-      def load(data_bag, name, opts={})
-        data = { 
+      def load(data_bag, name, opts = {})
+        data = {
           'data_bag' => data_bag,
           'id' => name
         }.merge(
@@ -37,11 +37,11 @@ module SecureDataBag
       end
 
       # Create a new SecureDataBag::Item from a hash and optional options.
-      # @param hash [Hash] the data 
+      # @param hash [Hash] the data
       # @param opts [Hash] the optional options to pass to Item.new
       # @return [SecureDataBag::Item]
       # @since 3.0.0
-      def from_hash(hash, opts={})
+      def from_hash(hash, opts = {})
         data = hash.dup
         data.delete('chef_type')
         data.delete('json_class')
@@ -60,7 +60,7 @@ module SecureDataBag
       # @param opts [Hash] the optional options ot pass to Item.new
       # @return [SecureDataBag::Item]
       # @since 3.0.0
-      def from_item(data_bag_item, opts={})
+      def from_item(data_bag_item, opts = {})
         data = data_bag_item.to_hash
         from_hash(data, opts)
       end
@@ -74,7 +74,7 @@ module SecureDataBag
     #        opts[:encrypted_keys] an array of keys to encrypt
     #        opts[:format] the SecureDataBag::Item format to enforce
     # @since 3.0.0
-    def initialize(opts={})
+    def initialize(opts = {})
       opts = Mash.new(opts)
 
       # Initiate the APIClient in Chef 12.3+
@@ -92,7 +92,7 @@ module SecureDataBag
       # Optionally provide the shared secret
       @secret = opts[:secret] if opts[:secret]
 
-      # Optionally provide a path to the shared secret. If not provided, the 
+      # Optionally provide a path to the shared secret. If not provided, the
       # secret loader will automatically attempt to select one.
       @secret_path = opts[:secret_path]
 
@@ -108,8 +108,8 @@ module SecureDataBag
       self
     end
 
-    # Array of hash keys which should be encrypted when encrypting this item. 
-    # For previously decrypted items, this will contain the keys which has 
+    # Array of hash keys which should be encrypted when encrypting this item.
+    # For previously decrypted items, this will contain the keys which has
     # previously been encrypted.
     # @since 3.0.0
     attr_accessor :encrypted_keys
@@ -128,7 +128,7 @@ module SecureDataBag
     # @param arg [String] optionally set the shared set
     # @return [String] the shared secret
     # @since 3.0.0
-    def secret(arg=nil)
+    def secret(arg = nil)
       @secret = arg unless arg.nil?
       @secret ||= load_secret
     end
@@ -159,7 +159,7 @@ module SecureDataBag
     # @param opts [Hash] the optional options
     # @return [Hash]
     # @since 3.0.0
-    def to_data(opts={})
+    def to_data(opts = {})
       opts = Mash.new(opts)
       result = encrypt_data(raw_data)
       result[SecureDataBag::METADATA_KEY] = metadata if opts[:metadata]
@@ -170,7 +170,7 @@ module SecureDataBag
     # @param opts [Hash] the optional options
     # @return [Hash]
     # @since 3.0.0
-    def to_hash(opts={})
+    def to_hash(opts = {})
       opts = Mash.new(opts)
       result = to_data(opts)
       result['chef_type'] = 'data_bag_item'
@@ -202,7 +202,7 @@ module SecureDataBag
       @secret = self.class.load_secret(@secret_path)
     end
 
-    # Decrypt the data, save the both the decrypted_keys and format for 
+    # Decrypt the data, save the both the decrypted_keys and format for
     # possible re-encryption, and return the descrypted hash.
     # @param data [Hash] the potentially encrypted hash
     # @param save [Boolean] whether to save the encrypted keys and format

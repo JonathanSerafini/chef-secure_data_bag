@@ -10,9 +10,9 @@ class Chef
       include SecureDataBag::ExportMixin
       include SecureDataBag::SecretsMixin
 
-      banner "knife secure bag show BAG [ITEM] (options)"
-      category "secure bag"
-      
+      banner 'knife secure bag show BAG [ITEM] (options)'
+      category 'secure bag'
+
       def run
         case @name_args.length
         when 2

@@ -10,12 +10,12 @@ class Chef
       include SecureDataBag::ExportMixin
       include SecureDataBag::SecretsMixin
 
-      banner "knife secure bag edit BAG [ITEM] (options)"
-      category "secure bag"
+      banner 'knife secure bag edit BAG [ITEM] (options)'
+      category 'secure bag'
 
       def run
         if @name_args.length != 2
-          stdout.puts "You must supply the data bag and an item to edit."
+          stdout.puts 'You must supply the data bag and an item to edit.'
           stdout.puts opt_parser
           exit 1
         end
@@ -36,8 +36,8 @@ class Chef
         # Generate a new SecureBagItem
         item_to_save = ::SecureDataBag::Item
                          .from_hash(edited_item, item_metadata)
-				item_to_save.data_bag @name_args[0]
-				item_to_save['id'] = @name_args[1]
+        item_to_save.data_bag @name_args[0]
+        item_to_save['id'] = @name_args[1]
         item_to_save.save
 
         stdout.puts("Saved as #{@name_args[0]}[#{@name_args[1]}]")

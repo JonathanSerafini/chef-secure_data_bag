@@ -29,5 +29,3 @@ module SecureDataBag
     end
   end
 end
-
-

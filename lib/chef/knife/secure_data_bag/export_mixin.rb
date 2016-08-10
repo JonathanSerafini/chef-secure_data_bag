@@ -55,7 +55,7 @@ class Chef
           end
 
           display_path = export_path(data_bag, item_name)
-                         .sub(/^#{export_root}\//,'')
+                         .sub(/^#{export_root}\//, '')
           stdout.puts("Exported to #{display_path}")
         end
 

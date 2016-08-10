@@ -2,11 +2,11 @@ require 'secure_data_bag/exceptions'
 
 module SecureDataBag
   module Encryptor
-    # Instantiate an Encryptor object responsable for encrypting the 
+    # Instantiate an Encryptor object responsable for encrypting the
     # raw_hash with the secret.
-    # 
-    # The optional metadata may contain hints as to how we should encrypt the 
-    # raw_hash. Should hints not be provided, this will do it's best to 
+    #
+    # The optional metadata may contain hints as to how we should encrypt the
+    # raw_hash. Should hints not be provided, this will do it's best to
     # detect the appropriate defaults.
     #
     # @param raw_hash [Hash] the raw hash to encrypt
@@ -26,10 +26,10 @@ module SecureDataBag
     end
   end
 
-  # Encryptor object responsable for encrypting the raw_hash with the 
+  # Encryptor object responsable for encrypting the raw_hash with the
   # secret. This object is just a wrapper around
   # Chef::EncryptedDataBagItem.
-  # 
+  #
   # @since 3.0.0
   class FlatEncryptor
     # The keys to encrypt
@@ -89,10 +89,10 @@ module SecureDataBag
     alias :for_encrypted_item :encrypt!
   end
 
-  # Encryptor object responsable for encrypting the raw_hash with the 
+  # Encryptor object responsable for encrypting the raw_hash with the
   # secret. This object will recursively step through the raw_hash, looking for
   # keys matching `encrypted_keys` and encrypt their values.
-  # 
+  #
   # @since 3.0.0
   class NestedEncryptor
     # The keys to encrypt

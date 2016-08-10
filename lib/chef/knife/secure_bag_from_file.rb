@@ -9,17 +9,17 @@ class Chef
       include SecureDataBag::SecretsMixin
 
       deps do
-        require "chef/data_bag"
-        require "chef/data_bag_item"
-        require "chef/knife/core/object_loader"
-        require "chef/json_compat"
-        require "chef/encrypted_data_bag_item"
+        require 'chef/data_bag'
+        require 'chef/data_bag_item'
+        require 'chef/knife/core/object_loader'
+        require 'chef/json_compat'
+        require 'chef/encrypted_data_bag_item'
       end
 
-      banner "knife secure bag from file BAG FILE|FLDR [FILE|FLDR] (options)"
-      category "secure bag"
+      banner 'knife secure bag from file BAG FILE|FLDR [FILE|FLDR] (options)'
+      category 'secure bag'
 
-      def load_data_bag_items(data_bag, items=nil)
+      def load_data_bag_items(data_bag, items = nil)
         items ||= find_all_data_bag_items(data_bag)
         item_paths = normalize_item_paths(items)
         item_paths.each do |item_path|

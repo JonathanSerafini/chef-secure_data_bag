@@ -3,11 +3,11 @@ require 'secure_data_bag/check_encrypted'
 
 module SecureDataBag
   module Decryptor
-    # Instantiate an Decryptor object responsable for decrypting the 
-    # encrypted_hash with the secret. As much as possible, this method will 
+    # Instantiate an Decryptor object responsable for decrypting the
+    # encrypted_hash with the secret. As much as possible, this method will
     # attempt to auto-detect the item format to ensure compatibility.
     #
-    # Much like with upstream, call #for_encrypted_item on the resulting 
+    # Much like with upstream, call #for_encrypted_item on the resulting
     # object to decrypt and deserialize it.
     #
     # @param encrypted_hash [Hash] the encrypted hash to decrypt
@@ -21,11 +21,11 @@ module SecureDataBag
     end
   end
 
-  # Decryptor object responsable for decrypting the encrypted_hash with the 
-  # secret. This functions similarly, to how 
+  # Decryptor object responsable for decrypting the encrypted_hash with the
+  # secret. This functions similarly, to how
   # Chef::EncryptedDataBagItem::Decryptor does, with the caveat that this
-  # is meant to decrypt entire objects and not single values. 
-  # 
+  # is meant to decrypt entire objects and not single values.
+  #
   # @since 3.0.0
   class NestedDecryptor
     include SecureDataBag::CheckEncrypted
@@ -88,7 +88,7 @@ module SecureDataBag
       decrypt_data(@encrypted_hash)
     end
 
-    # Method name preserved for compatibility with 
+    # Method name preserved for compatibility with
     # Chef::EncryptedDataBagItem::Decryptor.
     # @since 3.0.0
     alias :for_decrypted_item :decrypt!
@@ -109,7 +109,7 @@ module SecureDataBag
 
     # Decrypt a hash potentially containing nested encrypted values
     #
-    # Additionally, this method will attempt tovkeep track of the names of 
+    # Additionally, this method will attempt tovkeep track of the names of
     # each encrypted key.
     #
     # @param hash [Hash] a potentially encrypted hash
@@ -122,7 +122,6 @@ module SecureDataBag
         value = if looks_like_encrypted?(value)
                   @decrypted_keys.push(key) unless @decrypted_keys
                                                    .include?(key)
-                  #pp @format + ' -- ' + decrypt_value(value).class
                   decrypt_value(value)
                 elsif value.is_a?(Hash)
                   decrypt_hash(value)

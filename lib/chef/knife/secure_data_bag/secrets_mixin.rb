@@ -8,13 +8,13 @@ class Chef
         # @since 3.0.0
         def self.included(base)
           base.option :secret,
-            description: "The secret key used to (de)encrypt data bag item values",
-            short: "-s SECRET",
-            long: "--secret "
+            description: 'The secret key used to (de)encrypt data bag item values',
+            short: '-s SECRET',
+            long: '--secret '
 
           base.option :secret_file,
-            description: "The secret key file used to (de)encrypt data bag item values",
-            long: "--secret-file SECRET_FILE"
+            description: 'The secret key file used to (de)encrypt data bag item values',
+            long: '--secret-file SECRET_FILE'
         end
 
         # The shared secret used to encrypt / decrypt data bag items
@@ -24,7 +24,7 @@ class Chef
           @secret ||= begin
             secret = load_secret
             if not secret
-              ui.fatal("A secret or secret_file must be specified")
+              ui.fatal('A secret or secret_file must be specified')
               show_usage
               exit 1
             end
@@ -32,7 +32,7 @@ class Chef
           end
         end
 
-				private
+        private
 
         # Path to the secret_file
         # @return [String]
