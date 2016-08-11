@@ -164,6 +164,8 @@ This command functions just like `knife data bag show` and is used to print out 
 
 By default, it will auto-detect the Item type, and print it's unencrypted version to the terminal. This behavior, however, may be altered using the previously mentioned command line options.
 
+When displaying the content of the _data\_bag\_item_, an additional key of *_secure_metadata* will be added to the output which contains gem specific metadata such as the encryption formats and any encrypted keys found. This key will _not_ be saved with the item, however it may be manipulated to alter the behavior of the _edit_ or _export_ commands.
+
 #### knife secure bag open PATH
 
 This commands functions much like `knife secure bag show`, however it is designed to load a _data\_bag\_item_ from disk as opposed to loading it from Chef server. This may be of use when view the content of an exported encrypted file.
