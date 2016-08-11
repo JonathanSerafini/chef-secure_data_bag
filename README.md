@@ -164,6 +164,10 @@ This command functions just like `knife data bag show` and is used to print out 
 
 By default, it will auto-detect the Item type, and print it's unencrypted version to the terminal. This behavior, however, may be altered using the previously mentioned command line options.
 
+#### knife secure bag open PATH
+
+This commands functions much like `knife secure bag show`, however it is designed to load a _data\_bag\_item_ from disk as opposed to loading it from Chef server. This may be of use when view the content of an exported encrypted file.
+
 #### knife secure bag edit DATA_BAG DATA_BAG_ITEM
 
 This command functions just like `knife data bag edit` and is used to edit either a DataBagItem, EncryptedDataBagItem or a SecureDataBagItem. It supports all of the same options as `knife secure bag show`. 
