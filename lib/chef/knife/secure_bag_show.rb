@@ -27,7 +27,7 @@ class Chef
 
       def run_show
         display_metadata = config_metadata.dup
-        display_metadata[:encrypted_format] ||= 'plain'
+        display_metadata[:encryption_format] ||= 'plain'
 
         item = load_item(@name_args[0], @name_args[1], display_metadata)
         data = item.to_hash(metadata: true)
