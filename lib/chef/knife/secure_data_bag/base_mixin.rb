@@ -35,6 +35,7 @@ class Chef
             encryption_format: config[:encryption_format],
             decryption_format: config[:decryption_format],
             encrypted_keys: encrypted_keys,
+            encrypt: true,
             secret: secret
           )
         end

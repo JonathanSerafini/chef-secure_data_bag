@@ -161,7 +161,7 @@ module SecureDataBag
     # @since 3.0.0
     def to_data(opts = {})
       opts = Mash.new(opts)
-      result = encrypt_data(raw_data)
+      result = opts[:encrypt] ? encrypt_data(raw_data) : raw_data
       result[SecureDataBag::METADATA_KEY] = metadata if opts[:metadata]
       result
     end
