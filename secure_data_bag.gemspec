@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = SecureDataBag::VERSION
   spec.authors       = ['Jonathan Serafini']
   spec.email         = ['jonathan@lightspeedretail.com']
-  spec.summary       = 'Per-field data bag item encryption'
-  spec.description   = 'Provides a mechanism to partially encrypt data bag items and therefore ensure that they are searchable'
+  spec.summary       = 'Mechanism to partially encryot data bag items'
+  spec.description   = IO.read(File.join(File.dirname(__FILE__), 'README.md'))
   spec.license       = 'MIT'
   spec.homepage      =
     'https://github.com/JonathanSerafini/chef-secure_data_bag'
