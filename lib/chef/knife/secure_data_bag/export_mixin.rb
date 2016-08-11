@@ -50,6 +50,12 @@ class Chef
             exit 1
           end
 
+          unless ::File.directory?(::File.dirname(export_path))
+            ui.fatal("Export directory does not exist: #{export_path}")
+            show_usage
+            exit 1
+          end
+
           ::File.open(export_path(data_bag, item_name), 'w') do |f|
             f.write(Chef::JSONCompat.to_json_pretty(data))
           end
