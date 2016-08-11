@@ -1,4 +1,3 @@
-
 require 'chef/config'
 
 class Chef
