@@ -2,6 +2,7 @@ require 'chef/knife/data_bag_show'
 require_relative 'secure_data_bag/base_mixin'
 require_relative 'secure_data_bag/export_mixin'
 require_relative 'secure_data_bag/secrets_mixin'
+require_relative 'secure_data_bag/defaults_mixin'
 
 class Chef
   class Knife
@@ -9,6 +10,7 @@ class Chef
       include SecureDataBag::BaseMixin
       include SecureDataBag::ExportMixin
       include SecureDataBag::SecretsMixin
+      include SecureDataBag::DefaultsMixin
 
       banner 'knife secure bag show BAG [ITEM] (options)'
       category 'secure bag'
@@ -26,6 +28,8 @@ class Chef
       end
 
       def run_show
+        config_defaults_for_data_bag!(@name_args[0])
+
         display_metadata = config_metadata.dup
         display_metadata[:encryption_format] ||= 'plain'
 

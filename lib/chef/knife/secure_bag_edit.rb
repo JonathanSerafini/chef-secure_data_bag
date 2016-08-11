@@ -2,6 +2,7 @@ require 'chef/knife/data_bag_edit'
 require_relative 'secure_data_bag/base_mixin'
 require_relative 'secure_data_bag/export_mixin'
 require_relative 'secure_data_bag/secrets_mixin'
+require_relative 'secure_data_bag/defaults_mixin'
 
 class Chef
   class Knife
@@ -9,6 +10,7 @@ class Chef
       include SecureDataBag::BaseMixin
       include SecureDataBag::ExportMixin
       include SecureDataBag::SecretsMixin
+      include SecureDataBag::DefaultsMixin
 
       banner 'knife secure bag edit BAG [ITEM] (options)'
       category 'secure bag'
@@ -19,6 +21,8 @@ class Chef
           stdout.puts opt_parser
           exit 1
         end
+
+        config_defaults_for_data_bag!(@name_args[0])
 
         # Load the SecureBagItem, EncryptedDataBagItem or DataBagItem
         item = load_item(@name_args[0], @name_args[1], config_metadata)

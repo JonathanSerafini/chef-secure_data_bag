@@ -31,6 +31,7 @@ knife[:secure_data_bag][:encrypted_keys] = %w(
 knife[:secure_data_bag][:secret_file] = "#{local_dir}/secret.pem"
 knife[:secure_data_bag][:export_root] = "#{kitchen_dir}/data_bags"
 knife[:secure_data_bag][:export_on_upload] = true
+knife[:secure_data_bag][:defaults][:secrets][:export_format] = 'plain'
 ```
 
 To break this up:
@@ -50,6 +51,10 @@ When exporting a data\_bag\_item, files will be created in below this root direc
 `knife[:secure_data_bag][:export_on_upload]`
 
 When a data\_bag\_item is edited using `knife secure bag edit`, it may be automatically exported to the _export\_root_.
+
+`knife[:secure_data_bag][:defaults][:secrets][:export_format]`
+
+The configuration file additionally supports the _defaults_ hash which provides default values for all _command line arguments_ that one might use. Of all of them only the _export\_format_ key is likely to be of much use.
 
 ## Examples
 
@@ -161,13 +166,13 @@ Overrides the encryption format only for the _export_ feature.
 
 Root directly under which a folder should exist for each _data_bag_ into which to export _data_bag_items_ as json files.
 
+When displaying the content of the _data\_bag\_item_, an additional key of *_secure_metadata* will be added to the output which contains gem specific metadata such as the encryption formats and any encrypted keys found. This key will _not_ be saved with the item, however it may be manipulated to alter the behavior of the _edit_ or _export_ commands.
+
 #### knife secure bag show DATA_BAG ITEM
 
 This command functions just like `knife data bag show` and is used to print out the content of either a DataBagItem, EncryptedDataBagItem or SecureDataBagItem.
 
 By default, it will auto-detect the Item type, and print it's unencrypted version to the terminal. This behavior, however, may be altered using the previously mentioned command line options.
-
-When displaying the content of the _data\_bag\_item_, an additional key of *_secure_metadata* will be added to the output which contains gem specific metadata such as the encryption formats and any encrypted keys found. This key will _not_ be saved with the item, however it may be manipulated to alter the behavior of the _edit_ or _export_ commands.
 
 #### knife secure bag open PATH
 
