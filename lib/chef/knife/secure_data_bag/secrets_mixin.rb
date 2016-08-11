@@ -48,7 +48,7 @@ class Chef
         # @since 3.0.0
         def load_secret
           if config[:secret] then config[:secret]
-          else SecureDataBag::Item.load_secret(secret_file)
+          else ::SecureDataBag::Item.load_secret(secret_file)
           end
         end
       end

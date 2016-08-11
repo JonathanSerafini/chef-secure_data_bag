@@ -34,7 +34,8 @@ class Chef
           Mash.new(
             encryption_format: config[:encryption_format],
             decryption_format: config[:decryption_format],
-            encrypted_keys: encrypted_keys
+            encrypted_keys: encrypted_keys,
+            secret: secret
           )
         end
 
