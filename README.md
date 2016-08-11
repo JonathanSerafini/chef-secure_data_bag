@@ -79,6 +79,9 @@ item = SecureDataBagItem.from_hash(data, metadata)
 # Or more explicitely
 item = SecureDataBagItem.from_hash(data, encrypted_keys: %w(encoded))
 
+# Or load from server
+item = SecureDataBagItem.load("data_bag", "item")
+
 # Print the un-encrypted raw data
 pp item.raw_data
 
@@ -182,7 +185,7 @@ This command functions just like `knife data bag from file` and is used to uploa
 
 The gem additionally provides a few Recipe DSL methods which may be useful.
 
-```
+```ruby
 load_secure_item = secure_data_bag_item(
   data_bag_name, 
   data_bag_item, 
@@ -192,3 +195,4 @@ load_secure_item = secure_data_bag_item(
 load_plain_item = data_bag_item(data_bag_name, data_bag_item)
 convert_plain_to_secure = secure_data_bag_item!(load_plain_item)
 ```
+
