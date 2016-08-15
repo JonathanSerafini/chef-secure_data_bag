@@ -28,7 +28,7 @@ class Chef
         item_paths = normalize_item_paths(items)
         item_paths.each do |item_path|
           item = loader.load_from(data_bags_path, data_bag, item_path)
-          item = create_item(data_bag, item_path, item)
+          item = create_item(data_bag, item_path, item, config_metadata)
           item.save
           ui.info("Updated data_bag_item[#{item.data_bag}::#{item.id}]")
         end
