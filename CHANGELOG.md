@@ -1,6 +1,10 @@
 secure_data_bag
 ======
 
+v3.0.2
+------
+* Resolve issue with knife from file not encrypting files correctly
+
 v3.0.1
 ------
 * Ensure SecureDataBagItem .to\_data and .to\_hash output plain text unless the _encrypted_ metadata key is passed. This preserves compatibility with cookbooks running v2.
