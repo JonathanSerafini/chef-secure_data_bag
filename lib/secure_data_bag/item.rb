@@ -230,8 +230,9 @@ module SecureDataBag
       encryptor.encrypt!
       encrypted_hash = encryptor.encrypted_hash
       # Ensure that protected fields are never encrypted
-      encrypted_hash['data_bag'] = raw_data['data_bag']
-      encrypted_hash['id'] = raw_data['id']
+      %w(data_bag id).each do |k|
+        encrypted_hash[k] = raw_data[k] if encrypted_hash.key?(k)
+      end
       encrypted_hash
     end
 
