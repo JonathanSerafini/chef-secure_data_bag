@@ -228,7 +228,11 @@ module SecureDataBag
     def encrypt_data(data, _save: false)
       encryptor = SecureDataBag::Encryptor.new(data, secret, metadata)
       encryptor.encrypt!
-      encryptor.encrypted_hash
+      encrypted_hash = encryptor.encrypted_hash
+      # Ensure that protected fields are never encrypted
+      encrypted_hash['data_bag'] = raw_data['data_bag']
+      encrypted_hash['id'] = raw_data['id']
+      encrypted_hash
     end
 
     def encrypt_data!(data)
