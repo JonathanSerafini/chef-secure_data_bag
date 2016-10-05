@@ -16,7 +16,7 @@ class Chef
 
           base.option :export_format,
             description: 'Format to export the data_bag_item as. If unset, this will default to the encryption format.',
-            long: '--export-format'
+            long: '--export-format [plain|encrypted|nested]'
 
           base.option :export_root,
             long: '--export-root PATH',
@@ -42,7 +42,7 @@ class Chef
         # @since 3.0.0
         def export!(data_bag, item_name, item)
           item.encryption_format = export_format
-          data = item.to_hash
+          data = item.to_hash(encrypt: true)
 
           if export_root.nil?
             ui.fatal('Export root is not defined')
