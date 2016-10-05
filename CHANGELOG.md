@@ -1,6 +1,10 @@
 secure_data_bag
 ======
 
+v3.0.5
+------
+* Bugfix export format not encrypting
+
 v3.0.3
 ------
 * Ensure that reserved data_bag_item fields id and data_bag are never encrypted
