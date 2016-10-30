@@ -75,10 +75,10 @@ secret_key = SecureDataBagItem.load_key("/path/to/secret")
 
 # Create a hash of data to use as an exampe
 raw_data = {
-	id: "item",
+  id: "item",
   data_bag: "data_bag",
-	encoded: "my string",
-	unencoded: "other string"
+  encoded: "my string",
+  unencoded: "other string"
 }
 
 # Instantiate a SecureDataBagItem from a hash
