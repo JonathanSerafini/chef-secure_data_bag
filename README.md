@@ -1,12 +1,12 @@
 # SecureDataBag / Knife Secure Bag
 
-Knife Secure Bag provides a consistent interface to DataBagItem, EncryptedDataBagItem as well as the custom created SecureDataBagItem while also providing a few extra handy features to help in your DataBag workflows. 
+Knife Secure Bag provides a consistent interface to DataBagItem, EncryptedDataBagItem as well as the custom created SecureDataBagItem while also providing a few extra handy features to help in your DataBag workflows.
 
-SecureDataBagItem, can not only manage your existing DataBagItems and EncryptedDataBagItems, but it also provides you with a DataBag type which enables you to selectively encrypt only some of the fields in your DataBag thus allowing you to be able to search for the remaining fields. 
+SecureDataBagItem, can not only manage your existing DataBagItems and EncryptedDataBagItems, but it also provides you with a DataBag type which enables you to selectively encrypt only some of the fields in your DataBag thus allowing you to be able to search for the remaining fields.
 
 ## Installation
 
-To build and install the plugin add it your Gemfile or run: 
+To build and install the plugin add it your Gemfile or run:
 
 ```shell
 gem install secure_data_bag
@@ -42,7 +42,7 @@ When Knife Secure Bag encrypts a hash with an _encryption format_ of *nested*, i
 
 `knife[:secure_data_bag][:secret_file]`
 
-When encryption is required, the shared secret found at this location will be loaded. 
+When encryption is required, the shared secret found at this location will be loaded.
 
 `knife[:secure_data_bag][:export_root]`
 
@@ -66,15 +66,15 @@ metadata = {}
 # Define the keys we wish to encrypt
 metadata[:encrypted_keys] = %w(encoded)
 
-# Optionally load a specific shared secret. Otherwise, the global 
+# Optionally load a specific shared secret. Otherwise, the global
 # encrypted\_data\_bag\_secret will be automatically used.
 secret_key = SecureDataBagItem.load_key("/path/to/secret")
 
 # Create a hash of data to use as an exampe
 raw_data = {
-	id: "item", 
+	id: "item",
   data_bag: "data_bag",
-	encoded: "my string", 
+	encoded: "my string",
 	unencoded: "other string"
 }
 
@@ -97,8 +97,8 @@ pp item['encoded']
 pp item.to_hash
 
 =begin
-{ 
-  id:         "item", 
+{
+  id:         "item",
   data_bag:   "data_bag",
   encoded:    {
     encrypted_data: "encoded",
@@ -139,9 +139,9 @@ Most of the SubCommands support the following command-line options:
 
 `--enc-format [plain,encrypted,nested]`
 
-Ensure that, when displaying or uploading the data\_bag\_item, we forcibly encrypt the data\_bag\_item using the specified format instead of preserving the existing format. 
+Ensure that, when displaying or uploading the data\_bag\_item, we forcibly encrypt the data\_bag\_item using the specified format instead of preserving the existing format.
 
-In this case: 
+In this case:
 - plain: refers to a DataBagItem
 - encrypted: refers to an EnrytpedDataBagItem
 - nested: refers to a SecureDataBagItem
@@ -152,7 +152,7 @@ Attempt to decrypt the data\_bag\_item using the given format rather than the au
 
 `--enc-keys key1,key2,key3`
 
-Provide a comma delimited list of hash keys which should be encrypted when encrypting the data\_bag\_item. This list will be concatenated with any key names listed in the configuration file or which were previously encrypted. 
+Provide a comma delimited list of hash keys which should be encrypted when encrypting the data\_bag\_item. This list will be concatenated with any key names listed in the configuration file or which were previously encrypted.
 
 `--export`
 
@@ -180,11 +180,11 @@ This commands functions much like `knife secure bag show`, however it is designe
 
 #### knife secure bag edit DATA_BAG DATA_BAG_ITEM
 
-This command functions just like `knife data bag edit` and is used to edit either a DataBagItem, EncryptedDataBagItem or a SecureDataBagItem. It supports all of the same options as `knife secure bag show`. 
+This command functions just like `knife data bag edit` and is used to edit either a DataBagItem, EncryptedDataBagItem or a SecureDataBagItem. It supports all of the same options as `knife secure bag show`.
 
 #### knife secure bag from file DATA_BAG PATH
 
-This command functions just like `knife data bag from file` and is used to upload either a DataBagItem, EncryptedDataBagItem or a SecureDataBagItem. It supports all of the same options as `knife secure bag show`. 
+This command functions just like `knife data bag from file` and is used to upload either a DataBagItem, EncryptedDataBagItem or a SecureDataBagItem. It supports all of the same options as `knife secure bag show`.
 
 ## Recipe DSL
 
@@ -192,8 +192,8 @@ The gem additionally provides a few Recipe DSL methods which may be useful.
 
 ```ruby
 load_secure_item = secure_data_bag_item(
-  data_bag_name, 
-  data_bag_item, 
+  data_bag_name,
+  data_bag_item,
   cache: false
 )
 
