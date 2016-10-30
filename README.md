@@ -19,6 +19,7 @@ gem install secure_data_bag
 Defaults for the Knife command may be provided in your _knife.rb_ file.
 
 ```ruby
+knife[:secure_data_bag] ||= {}
 knife[:secure_data_bag][:encrypted_keys] = %w(
   password
   ssh_keys
@@ -31,6 +32,8 @@ knife[:secure_data_bag][:encrypted_keys] = %w(
 knife[:secure_data_bag][:secret_file] = "#{local_dir}/secret.pem"
 knife[:secure_data_bag][:export_root] = "#{kitchen_dir}/data_bags"
 knife[:secure_data_bag][:export_on_upload] = true
+knife[:secure_data_bag][:defaults] ||= {}
+knife[:secure_data_bag][:defaults][:secrets] ||= {}
 knife[:secure_data_bag][:defaults][:secrets][:export_format] = 'plain'
 ```
 
